@@ -23,6 +23,27 @@ jobs:
         with:
           gradle-version: "8.9"
 
+      # Сертификаты НУЦ Минцифры нужны, чтобы телефон доверял серверам GigaChat
+      - name: Download Russian Trusted CA certificates
+        run: |
+          mkdir -p app/src/main/assets
+          fetch() {
+            out="$1"; shift
+            for url in "$@"; do
+              if curl -fsSL --max-time 30 -o "$out" "$url" && [ "$(stat -c%s "$out")" -gt 500 ]; then
+                echo "OK: $out <- $url"; return 0
+              fi
+            done
+            echo "::warning::Could not download $out"; rm -f "$out"; return 0
+          }
+          fetch app/src/main/assets/russian_root_ca.crt \
+            https://gu-st.ru/content/lending/russian_trusted_root_ca_pem.crt \
+            https://gu-st.ru/content/Other/doc/russian_trusted_root_ca.cer
+          fetch app/src/main/assets/russian_sub_ca.crt \
+            https://gu-st.ru/content/lending/russian_trusted_sub_ca_pem.crt \
+            https://gu-st.ru/content/Other/doc/russian_trusted_sub_ca.cer
+          ls -la app/src/main/assets
+
       - name: Build
         run: gradle assembleDebug --no-daemon --stacktrace
 

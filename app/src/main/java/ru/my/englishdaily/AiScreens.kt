@@ -81,8 +81,9 @@ fun SmallMic(recognizer: Recognizer, speaker: Speaker, grad: Grad, onText: (Stri
 fun SettingsScreen(store: ProgressStore, onExit: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var key by remember { mutableStateOf(store.apiKey) }
-    var status by remember { mutableStateOf<String?>(null) }
+    var provider by remember { mutableStateOf(store.provider) }
+    var key by remember(provider) { mutableStateOf(store.key(provider)) }
+    var status by remember(provider) { mutableStateOf<String?>(null) }
     var checking by remember { mutableStateOf(false) }
 
     Column(
@@ -91,33 +92,57 @@ fun SettingsScreen(store: ProgressStore, onExit: () -> Unit) {
             .verticalScroll(rememberScrollState())
     ) {
         TopBar("⚙️ Настройки", onExit)
-        SoftCard(Modifier.fillMaxWidth()) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconTile("🤖", Grads.Hero, 48.dp)
-                Spacer(Modifier.width(14.dp))
-                Column {
-                    Text("Собеседник-ИИ", style = MaterialTheme.typography.titleMedium)
-                    Hint("Claude Haiku от Anthropic")
+        Text("Собеседник-ИИ", style = MaterialTheme.typography.titleLarge)
+        Hint("Нужен для разговора с ИИ и проверки дневника. Всё остальное работает без него.")
+        Spacer(Modifier.height(12.dp))
+
+        Provider.entries.forEach { p ->
+            val selected = p == provider
+            SoftCard(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 5.dp),
+                onClick = { provider = p }
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconTile(
+                        if (selected) "✓" else if (p == Provider.GIGACHAT) "🟢" else if (p == Provider.GROQ) "⚡" else "🟣",
+                        if (selected) Grads.Roleplay else Grads.Book,
+                        40.dp
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(p.title, style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                p.badge,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (p.badge == "Бесплатно") Good else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Hint(p.hint)
+                        if (store.key(p).isNotBlank()) Text("🔑 ключ сохранён", style = MaterialTheme.typography.labelSmall, color = Good)
+                    }
                 }
             }
-            Spacer(Modifier.height(12.dp))
-            Hint(
-                "Для разговора с ИИ и проверки дневника нужен свой API-ключ.\n\n" +
-                    "1) Зайди на console.anthropic.com и зарегистрируйся.\n" +
-                    "2) Пополни баланс (хватит $5 на очень долго — один ответ стоит доли цента).\n" +
-                    "3) Раздел API Keys → Create Key → скопируй ключ и вставь сюда.\n\n" +
-                    "Ключ хранится только на этом телефоне."
-            )
-            Spacer(Modifier.height(12.dp))
-            SoftButton("Открыть console.anthropic.com", {
-                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(Ai.KEYS_URL)))
+        }
+
+        Spacer(Modifier.height(10.dp))
+        SoftCard(Modifier.fillMaxWidth()) {
+            Text("Как получить ключ", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(4.dp))
+            Hint(provider.instructions + "\n\nКлюч хранится только на этом телефоне.")
+            Spacer(Modifier.height(10.dp))
+            SoftButton("Открыть сайт", {
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(provider.siteUrl)))
             }, Modifier.fillMaxWidth(), height = 48.dp)
         }
         Spacer(Modifier.height(14.dp))
         OutlinedTextField(
             value = key,
             onValueChange = { key = it.trim() },
-            label = { Text("API-ключ (sk-ant-…)") },
+            label = { Text(provider.keyLabel) },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
             shape = RoundedCornerShape(18.dp),
@@ -127,16 +152,18 @@ fun SettingsScreen(store: ProgressStore, onExit: () -> Unit) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             SoftButton("Удалить", {
                 key = ""
-                store.apiKey = ""
+                store.setKey(provider, "")
                 status = "Ключ удалён."
             }, Modifier.weight(1f))
             GradientButton(if (checking) "Проверяю…" else "Сохранить", {
                 if (checking) return@GradientButton
-                store.apiKey = key
+                store.setKey(provider, key)
+                store.provider = provider
                 checking = true
                 status = null
+                val p = provider
                 scope.launch {
-                    val r = Ai.ask(key, "Reply with one word.", listOf(Ai.Msg("user", "Say OK")), maxTokens = 5)
+                    val r = Ai.ask(p, key, "Reply with one word.", listOf(Ai.Msg("user", "Say OK")), maxTokens = 10)
                     checking = false
                     status = r.fold({ "✅ Ключ работает! Можно разговаривать." }, { "❌ ${it.message}" })
                 }
@@ -146,6 +173,7 @@ fun SettingsScreen(store: ProgressStore, onExit: () -> Unit) {
             Spacer(Modifier.height(10.dp))
             Text(it, style = MaterialTheme.typography.bodyLarge)
         }
+        Spacer(Modifier.height(20.dp))
     }
 }
 
@@ -173,10 +201,10 @@ fun AiChatScreen(store: ProgressStore, speaker: Speaker, onSettings: () -> Unit,
     if (t == null) {
         Column(Modifier.fillMaxSize()) {
             TopBar("🤖 Собеседник", onExit)
-            if (store.apiKey.isBlank()) {
+            if (!store.aiReady) {
                 SoftCard(Modifier.fillMaxWidth()) {
                     Text("Нужен API-ключ", style = MaterialTheme.typography.titleMedium)
-                    Hint("Чтобы разговаривать с ИИ, добавь ключ Claude в настройках. Это 2 минуты.")
+                    Hint("Чтобы разговаривать с ИИ, добавь бесплатный ключ GigaChat в настройках. Это 3 минуты.")
                     Spacer(Modifier.height(10.dp))
                     GradientButton("Открыть настройки", onSettings, Modifier.fillMaxWidth())
                 }
@@ -232,7 +260,7 @@ private fun ChatView(topic: ChatTopic, store: ProgressStore, speaker: Speaker, o
         busy = true
         error = null
         scope.launch {
-            val r = Ai.ask(store.apiKey, chatSystem(topic), history())
+            val r = Ai.ask(store, chatSystem(topic), history())
             busy = false
             r.onSuccess { text ->
                 val names = listOf("REPLY", "FIX", "RU")
@@ -432,14 +460,14 @@ fun DiaryScreen(store: ProgressStore, speaker: Speaker, onSettings: () -> Unit, 
             }, Modifier.weight(1f))
             GradientButton(if (busy) "Проверяю…" else "✨ Проверить с ИИ", {
                 if (busy || text.isBlank()) return@GradientButton
-                if (store.apiKey.isBlank()) {
+                if (!store.aiReady) {
                     onSettings()
                     return@GradientButton
                 }
                 busy = true
                 info = null
                 scope.launch {
-                    val r = Ai.ask(store.apiKey, diarySystem, listOf(Ai.Msg("user", text.trim())), maxTokens = 700)
+                    val r = Ai.ask(store, diarySystem, listOf(Ai.Msg("user", text.trim())), maxTokens = 700)
                     busy = false
                     r.onSuccess { answer ->
                         val names = listOf("CORRECTED", "NOTES")

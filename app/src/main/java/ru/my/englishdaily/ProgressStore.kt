@@ -142,9 +142,22 @@ class ProgressStore(context: Context) {
 
     // ---------- Настройки ----------
 
-    var apiKey: String
-        get() = prefs.getString("_api_key", "").orEmpty()
-        set(value) = prefs.edit().putString("_api_key", value.trim()).apply()
+    var provider: Provider
+        get() = Provider.entries.firstOrNull { it.name == prefs.getString("_provider", null) }
+            ?: if (prefs.getString("_api_key", "").isNullOrBlank()) Provider.GIGACHAT else Provider.CLAUDE
+        set(value) = prefs.edit().putString("_provider", value.name).apply()
+
+    fun key(p: Provider): String {
+        val legacy = if (p == Provider.CLAUDE) prefs.getString("_api_key", "").orEmpty() else ""
+        return prefs.getString("_key_${p.name}", legacy).orEmpty()
+    }
+
+    fun setKey(p: Provider, value: String) {
+        prefs.edit().putString("_key_${p.name}", value.trim()).apply()
+    }
+
+    /** Есть ли ключ у выбранного провайдера ИИ. */
+    val aiReady: Boolean get() = key(provider).isNotBlank()
 
     // ---------- Дневник ----------
 
