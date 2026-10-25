@@ -3,7 +3,7 @@ package ru.my.englishdaily
 /** Реплика: who = 0 — первый голос (A), 1 — второй голос (B). */
 data class Line(val who: Int, val en: String, val ru: String)
 
-data class Dialogue(val id: String, val emoji: String, val title: String, val lines: List<Line>)
+data class Dialogue(val id: String, val emoji: String, val title: String, val lines: List<Line>, val level: Int = 1)
 
 private fun a(en: String, ru: String) = Line(0, en, ru)
 private fun b(en: String, ru: String) = Line(1, en, ru)
@@ -152,8 +152,13 @@ object Dialogues {
         ),
     )
 
+    /** Базовые и сложные диалоги вместе. */
+    val everything: List<Dialogue> get() = all + AdvancedDialogues.all
+
     /** Все реплики как карточки — для тренировок «на слух», «диктант» и т. д. */
-    val items: List<Item> = all.flatMap { d ->
+    val items: List<Item> get() = basicItems + AdvancedDialogues.items
+
+    private val basicItems: List<Item> = all.flatMap { d ->
         d.lines.mapIndexed { i, l -> Item("d:${d.id}:$i", l.en, l.ru, "${d.emoji} ${d.title}") }
     }
 }

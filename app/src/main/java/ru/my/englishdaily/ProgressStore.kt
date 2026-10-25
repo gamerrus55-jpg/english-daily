@@ -93,12 +93,33 @@ class ProgressStore(context: Context) {
         bump("stories", xp = 30)
     }
 
+    fun grammarBest(id: String): Int = prefs.getInt("_gr_$id", -1)
+
+    fun saveGrammarResult(id: String, percent: Int) {
+        if (percent > grammarBest(id)) prefs.edit().putInt("_gr_$id", percent).apply()
+        bump("grammar", xp = 25)
+    }
+
+    fun soundBest(id: String): Int = prefs.getInt("_snd_$id", -1)
+
+    fun saveSoundResult(id: String, percent: Int) {
+        if (percent > soundBest(id)) prefs.edit().putInt("_snd_$id", percent).apply()
+        bump("sounds", xp = 15)
+    }
+
+    // ---------- Уровень сложности ----------
+
+    /** null — ещё не выбран (покажем выбор при запуске). */
+    var level: Level?
+        get() = Level.entries.firstOrNull { it.name == prefs.getString("_level", null) }
+        set(value) = prefs.edit().putString("_level", value?.name).apply()
+
     // ---------- Опыт, уровни, активность по дням ----------
 
     val xp: Int get() = prefs.getInt("_xp", 0)
 
     /** Уровень и прогресс до следующего: (уровень, набрано на уровне, нужно на уровень). */
-    fun level(): Triple<Int, Int, Int> {
+    fun xpLevel(): Triple<Int, Int, Int> {
         var level = 1
         var rest = xp
         var need = 100

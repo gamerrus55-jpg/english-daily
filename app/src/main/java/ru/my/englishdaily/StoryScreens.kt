@@ -42,7 +42,7 @@ fun StoryListScreen(store: ProgressStore, onOpen: (Story) -> Unit, onExit: () ->
                     )
                 }
             }
-            Stories.all.groupBy { it.level }.forEach { (level, list) ->
+            Stories.everything.groupBy { it.level }.forEach { (level, list) ->
                 item {
                     Text(
                         Stories.levelNames[level] ?: "Уровень $level",

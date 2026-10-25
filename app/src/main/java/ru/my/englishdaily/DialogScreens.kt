@@ -46,7 +46,7 @@ fun DialogListScreen(store: ProgressStore, roleplay: Boolean, onOpen: (Dialogue)
                     )
                 }
             }
-            items(Dialogues.all, key = { it.id }) { d ->
+            items(Dialogues.everything, key = { it.id }) { d ->
                 val times = store.listened(d.id)
                 SoftCard(Modifier.fillMaxWidth(), onClick = { onOpen(d) }) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -54,7 +54,7 @@ fun DialogListScreen(store: ProgressStore, roleplay: Boolean, onOpen: (Dialogue)
                         Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
                             Text(d.title, style = MaterialTheme.typography.titleMedium)
-                            Hint("${d.lines.size} реплик · " + if (times == 0) "ещё не слушал" else "прослушан: $times")
+                            Hint((if (d.level >= 3) "🌳 продвинутый · " else "") + "${d.lines.size} реплик · " + if (times == 0) "ещё не слушал" else "прослушан: $times")
                         }
                         Text(
                             if (times >= 3) "✅" else "›",

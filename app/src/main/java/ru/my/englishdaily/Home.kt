@@ -27,6 +27,9 @@ import java.time.LocalTime
 
 private const val DAILY_GOAL = 30
 
+/** Плитка рекомендации на главном экране. */
+private data class Rec(val emoji: String, val title: String, val action: () -> Unit)
+
 @Composable
 fun HomeScreen(
     store: ProgressStore,
@@ -45,7 +48,7 @@ fun HomeScreen(
     val stats = remember(deck) { store.stats(deck.items) }
     val streak = remember { store.streak() }
     val today = remember { store.today() }
-    val level = remember { store.level() }
+    val level = remember { store.xpLevel() }
     var updateNote by remember { mutableStateOf<String?>(null) }
 
     val greeting = remember {
@@ -97,7 +100,60 @@ fun HomeScreen(
             Hint("Русский голос не найден — в аудиоуроке русская фраза будет только на экране.")
         }
 
+        // Рекомендации под уровень
+        val lvl = store.level ?: Level.BEGINNER
+        SectionTitle("Рекомендуем · ${lvl.emoji} ${lvl.title}", null)
+        val recs: List<Rec> = when (lvl) {
+            Level.BEGINNER -> listOf(
+                Rec("📐", "Грамматика") { onOpen(Screen.GrammarList) },
+                Rec("⚡", "Вспомни быстро") { onStart(Mode.RECALL) },
+                Rec("🎧", "Аудиоурок") { onStart(Mode.AUDIO) },
+            )
+            Level.INTERMEDIATE -> listOf(
+                Rec("🎬", "Диалоги") { onDialogs(false) },
+                Rec("🎙", "Скажи вслух") { onStart(Mode.SPEAK) },
+                Rec("📚", "Истории") { onOpen(Screen.StoryList) },
+            )
+            Level.ADVANCED -> listOf(
+                Rec("🎤", "Монолог") { onOpen(Screen.Monologue) },
+                Rec("🤖", "Собеседник") { onOpen(Screen.AiChat) },
+                Rec("🎭", "Ролевая игра") { onDialogs(true) },
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            recs.forEachIndexed { i, (emoji, title, action) ->
+                SoftCard(
+                    Modifier
+                        .weight(1f)
+                        .height(108.dp),
+                    onClick = action,
+                    radius = 22.dp
+                ) {
+                    IconTile(emoji, listOf(Grads.Recall, Grads.Speak, Grads.Repeat)[i % 3], 40.dp)
+                    Spacer(Modifier.height(8.dp))
+                    Text(title, style = MaterialTheme.typography.labelLarge, maxLines = 2)
+                }
+            }
+        }
+
+        SectionTitle("Этап 0 · Фундамент", "Грамматика по методу Бонк и английские звуки")
+        WideTile(
+            emoji = "📐",
+            title = "Грамматика шаг за шагом",
+            hint = "${Grammar.all.size} уроков: правило, таблица, трансформации, перевод голосом",
+            grad = Grads.Build,
+            onClick = { onOpen(Screen.GrammarList) }
+        )
+        WideTile(
+            emoji = "👂",
+            title = "Звуки",
+            hint = "${Sounds.all.size} тем: ship/sheep, think/sink… с тестом на слух",
+            grad = Grads.Repeat,
+            onClick = { onOpen(Screen.SoundList) }
+        )
+
         // Выбор колоды
+        SectionTitle("Колода для тренировок", null)
         Row(
             Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -112,7 +168,7 @@ fun HomeScreen(
         WideTile(
             emoji = "🎬",
             title = "Диалоги",
-            hint = "${Dialogues.all.size} сценок: кафе, такси, врач, работа… Два голоса, три скорости",
+            hint = "${Dialogues.everything.size} сценок: кафе, такси, врач, работа… Два голоса, три скорости",
             grad = Grads.Dialogs,
             onClick = { onDialogs(false) }
         )
@@ -132,7 +188,7 @@ fun HomeScreen(
         WideTile(
             emoji = "📚",
             title = "Истории",
-            hint = "${Stories.all.size} историй трёх уровней · вопросы голосом · перевод по нажатию на слово",
+            hint = "${Stories.everything.size} историй четырёх уровней · вопросы голосом · перевод по нажатию на слово",
             grad = Grads.Recall,
             onClick = { onOpen(Screen.StoryList) }
         )
@@ -151,6 +207,13 @@ fun HomeScreen(
             hint = "Разговор голосом на любую тему с исправлением ошибок",
             grad = Grads.Hero,
             onClick = { onOpen(Screen.AiChat) }
+        )
+        WideTile(
+            emoji = "🎤",
+            title = "Монолог",
+            hint = "Говори минуту на тему без остановки — ИИ оценит речь и подскажет, как лучше",
+            grad = Grads.Speak,
+            onClick = { onOpen(Screen.Monologue) }
         )
 
         WideTile(

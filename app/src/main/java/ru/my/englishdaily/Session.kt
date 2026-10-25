@@ -144,7 +144,7 @@ private fun PromptCard(label: String, text: String, sub: String? = null) {
 
 @Composable
 private fun RecallCard(item: Item, speaker: Speaker, grad: Grad, onDone: (Boolean) -> Unit) {
-    val totalMs = 3000L + 600L * item.en.split(" ").size
+    val totalMs = ((3000L + 600L * item.en.split(" ").size) * CurrentLevel.timerFactor).toLong()
     var revealed by remember { mutableStateOf(false) }
     var done by remember { mutableStateOf(false) }
     var left by remember { mutableFloatStateOf(1f) }

@@ -366,4 +366,8 @@ enum class ChatTopic(val emoji: String, val title: String, val prompt: String) {
     DOCTOR("🩺", "У врача", "you are a doctor and the user is a patient describing how they feel"),
     CARS("🚗", "Машины", "talking about cars, driving, repairs and roads"),
     MOVIES("🎬", "Фильмы и сериалы", "talking about favourite movies and TV series"),
+    DEBATE("⚔️", "Дебаты", "a friendly debate: pick a common everyday controversial topic (e.g. remote work, social media, cities vs countryside), take the opposite side to the user and ask them to defend their opinion"),
+    MEETING("📊", "Рабочая встреча", "a work meeting: you are a colleague discussing a project, deadlines and problems"),
+    SMALLTALK("🍻", "Small talk", "casual small talk with a native speaker at a party: weather, weekend plans, hobbies, jokes"),
+    STORY("📖", "Расскажи историю", "the user tells you a story from their life; ask follow-up questions and react naturally"),
 }

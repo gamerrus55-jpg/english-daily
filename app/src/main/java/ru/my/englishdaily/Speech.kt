@@ -168,17 +168,21 @@ private fun numberToWords(n: Int): List<String> = when {
 }
 
 private val expansions = mapOf(
-    "im" to "i am", "youre" to "you are", "were" to "were", "theyre" to "they are",
+    "im" to "i am", "youre" to "you are", "theyre" to "they are",
     "hes" to "he is", "shes" to "she is", "its" to "it is", "thats" to "that is",
     "whats" to "what is", "wheres" to "where is", "hows" to "how is", "theres" to "there is",
     "heres" to "here is", "lets" to "let us", "dont" to "do not", "doesnt" to "does not",
     "didnt" to "did not", "cant" to "can not", "cannot" to "can not", "wont" to "will not",
     "isnt" to "is not", "arent" to "are not", "wasnt" to "was not", "havent" to "have not",
-    "hasnt" to "has not", "ill" to "i will", "youll" to "you will", "well" to "well",
+    "hasnt" to "has not", "ill" to "i will", "youll" to "you will",
     "thatll" to "that will", "ive" to "i have", "youve" to "you have", "weve" to "we have",
     "id" to "i would", "wanna" to "want to", "gonna" to "going to", "gotta" to "got to",
     "ok" to "okay", "wifi" to "wi fi", "gimme" to "give me", "lemme" to "let me",
     "dunno" to "do not know", "kinda" to "kind of", "sorta" to "sort of",
+    "werent" to "were not", "shouldnt" to "should not", "couldnt" to "could not", "wouldnt" to "would not",
+    "mustnt" to "must not", "itll" to "it will", "theyll" to "they will", "theyve" to "they have",
+    "youd" to "you would", "hed" to "he would", "wed" to "we would", "theyd" to "they would",
+    "shouldve" to "should have", "wouldve" to "would have", "couldve" to "could have",
 )
 
 /** Слова фразы в «каноническом» виде: без сокращений, числа словами. */

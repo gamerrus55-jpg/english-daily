@@ -78,7 +78,7 @@ fun SmallMic(recognizer: Recognizer, speaker: Speaker, grad: Grad, onText: (Stri
 // ---------- Настройки ИИ ----------
 
 @Composable
-fun SettingsScreen(store: ProgressStore, onExit: () -> Unit) {
+fun SettingsScreen(store: ProgressStore, onLevel: () -> Unit, onExit: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var provider by remember { mutableStateOf(store.provider) }
@@ -92,6 +92,19 @@ fun SettingsScreen(store: ProgressStore, onExit: () -> Unit) {
             .verticalScroll(rememberScrollState())
     ) {
         TopBar("⚙️ Настройки", onExit)
+        val lvl = store.level ?: Level.BEGINNER
+        SoftCard(Modifier.fillMaxWidth(), onClick = onLevel) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconTile(lvl.emoji, Grads.Roleplay, 44.dp)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("Уровень: ${lvl.title} · ${lvl.cefr}", style = MaterialTheme.typography.titleMedium)
+                    Hint("Нажми, чтобы поменять")
+                }
+                Text("›", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        Spacer(Modifier.height(18.dp))
         Text("Собеседник-ИИ", style = MaterialTheme.typography.titleLarge)
         Hint("Нужен для разговора с ИИ и проверки дневника. Всё остальное работает без него.")
         Spacer(Modifier.height(12.dp))
@@ -181,12 +194,17 @@ fun SettingsScreen(store: ProgressStore, onExit: () -> Unit) {
 
 private data class ChatLine(val mine: Boolean, val en: String, val ru: String = "", val fix: String = "")
 
-private fun chatSystem(topic: ChatTopic) = """
-You are a friendly English conversation partner for a Russian-speaking learner at beginner level (A1–A2).
+private fun levelStyle(level: Level): String = when (level) {
+    Level.BEGINNER -> "The learner is a beginner (A1–A2). Use very simple, everyday spoken English, short sentences, no difficult words. Reply with 1–3 short sentences, then ask ONE simple question."
+    Level.INTERMEDIATE -> "The learner is intermediate (B1). Use natural everyday English with common phrasal verbs, but avoid rare words. Reply with 2–4 sentences, then ask a question."
+    Level.ADVANCED -> "The learner is advanced (B2+) but lacks speaking practice. Talk like a native speaker: natural speed, idioms, phrasal verbs, humour, follow-up questions that make them explain and argue. Reply with 2–5 sentences."
+}
+
+private fun chatSystem(topic: ChatTopic, level: Level) = """
+You are a friendly English conversation partner for a Russian-speaking learner.
+${levelStyle(level)}
 Situation: ${topic.prompt}.
 Rules:
-- Use simple, everyday spoken English. Short sentences. No difficult words.
-- Reply with 1–3 short sentences, then ask ONE simple question to keep the conversation going.
 - If the user writes in Russian or gets stuck, help with a simple English phrase they can say.
 Always answer in EXACTLY this format:
 REPLY: <your English reply>
@@ -260,7 +278,7 @@ private fun ChatView(topic: ChatTopic, store: ProgressStore, speaker: Speaker, o
         busy = true
         error = null
         scope.launch {
-            val r = Ai.ask(store, chatSystem(topic), history())
+            val r = Ai.ask(store, chatSystem(topic, store.level ?: Level.BEGINNER), history())
             busy = false
             r.onSuccess { text ->
                 val names = listOf("REPLY", "FIX", "RU")
@@ -379,8 +397,9 @@ private val diaryStarters = listOf(
     "Today I…", "I got up at…", "I'm going to…", "Yesterday I…", "I like…", "I need to…", "I want to…", "I'm tired because…",
 )
 
-private val diarySystem = """
-You are a kind English teacher for a Russian-speaking beginner. The student wrote a short diary entry in English.
+private fun diarySystem(level: Level) = """
+You are a kind English teacher for a Russian-speaking student, level ${level.cefr}. The student wrote a short diary entry in English.
+${if (level == Level.ADVANCED) "Also suggest more natural, native-like phrasing and idioms where appropriate." else "Keep the corrected version simple."}
 Answer in EXACTLY this format:
 CORRECTED: <the whole entry corrected into simple, natural English>
 NOTES: <2–4 short notes in Russian about the most important mistakes, each on its own line starting with "• ". If there are no mistakes, write "• Ошибок нет, отлично!">
@@ -467,7 +486,7 @@ fun DiaryScreen(store: ProgressStore, speaker: Speaker, onSettings: () -> Unit, 
                 busy = true
                 info = null
                 scope.launch {
-                    val r = Ai.ask(store, diarySystem, listOf(Ai.Msg("user", text.trim())), maxTokens = 700)
+                    val r = Ai.ask(store, diarySystem(store.level ?: Level.BEGINNER), listOf(Ai.Msg("user", text.trim())), maxTokens = 700)
                     busy = false
                     r.onSuccess { answer ->
                         val names = listOf("CORRECTED", "NOTES")

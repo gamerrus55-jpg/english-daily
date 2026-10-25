@@ -32,6 +32,12 @@ sealed interface Screen {
     data object AiChat : Screen
     data object Settings : Screen
     data object Progress : Screen
+    data object GrammarList : Screen
+    data class GrammarView(val lesson: GrammarLesson) : Screen
+    data object SoundList : Screen
+    data class SoundView(val topic: SoundTopic) : Screen
+    data object Monologue : Screen
+    data object LevelPick : Screen
 }
 
 @Composable
@@ -41,6 +47,14 @@ fun App(speaker: Speaker, store: ProgressStore) {
             var screen by remember { mutableStateOf<Screen>(Screen.Home) }
             var deck by remember { mutableStateOf(Deck.COURSE) }
             var latestBuild by remember { mutableStateOf<Int?>(null) }
+            var level by remember { mutableStateOf(store.level) }
+
+            // Уровень влияет на скорость речи, таймеры и колоду по умолчанию
+            LaunchedEffect(level) {
+                val l = level ?: return@LaunchedEffect
+                CurrentLevel.value = l
+                speaker.speed = if (l == Level.ADVANCED) Speed.FAST else Speed.NORMAL
+            }
 
             LaunchedEffect(Unit) { latestBuild = Updater.latestBuild() }
 
@@ -52,7 +66,13 @@ fun App(speaker: Speaker, store: ProgressStore) {
                     .safeDrawingPadding()
                     .padding(horizontal = 18.dp, vertical = 12.dp)
             ) {
-                when (val s = screen) {
+                if (level == null) {
+                    LevelPicker(null) { picked ->
+                        store.level = picked
+                        level = picked
+                        if (picked == Level.ADVANCED) deck = Deck.IDIOMS
+                    }
+                } else when (val s = screen) {
                     Screen.Home -> HomeScreen(
                         store = store,
                         speaker = speaker,
@@ -136,7 +156,43 @@ fun App(speaker: Speaker, store: ProgressStore) {
 
                     Screen.Settings -> {
                         BackHandler(onBack = goHome)
-                        SettingsScreen(store, onExit = goHome)
+                        SettingsScreen(store, onLevel = { screen = Screen.LevelPick }, onExit = goHome)
+                    }
+
+                    Screen.LevelPick -> {
+                        BackHandler(onBack = { screen = Screen.Settings })
+                        LevelPicker(level) { picked ->
+                            store.level = picked
+                            level = picked
+                            screen = Screen.Home
+                        }
+                    }
+
+                    Screen.GrammarList -> {
+                        BackHandler(onBack = goHome)
+                        GrammarListScreen(store, onOpen = { screen = Screen.GrammarView(it) }, onExit = goHome)
+                    }
+
+                    is Screen.GrammarView -> {
+                        val back = { screen = Screen.GrammarList }
+                        BackHandler(onBack = back)
+                        GrammarLessonScreen(s.lesson, speaker, store, onExit = back)
+                    }
+
+                    Screen.SoundList -> {
+                        BackHandler(onBack = goHome)
+                        SoundListScreen(store, onOpen = { screen = Screen.SoundView(it) }, onExit = goHome)
+                    }
+
+                    is Screen.SoundView -> {
+                        val back = { screen = Screen.SoundList }
+                        BackHandler(onBack = back)
+                        SoundTopicScreen(s.topic, speaker, store, onExit = back)
+                    }
+
+                    Screen.Monologue -> {
+                        BackHandler(onBack = goHome)
+                        MonologueScreen(store, speaker, onSettings = { screen = Screen.Settings }, onExit = goHome)
                     }
 
                     Screen.Progress -> {

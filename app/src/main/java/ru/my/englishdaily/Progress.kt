@@ -23,8 +23,8 @@ data class Badge(val emoji: String, val title: String, val desc: String, val unl
 
 fun badges(store: ProgressStore): List<Badge> {
     val learned = Deck.entries.flatMap { it.items }.distinctBy { it.id }.count { store.box(it.id) >= 3 }
-    val dialogsDone = Dialogues.all.count { store.listened(it.id) > 0 }
-    val storiesDone = Stories.all.count { store.storyBest(it.id) >= 0 }
+    val dialogsDone = Dialogues.everything.count { store.listened(it.id) > 0 }
+    val storiesDone = Stories.everything.count { store.storyBest(it.id) >= 0 }
     val best = store.bestStreak
     val xp = store.xp
     return listOf(
@@ -37,7 +37,7 @@ fun badges(store: ProgressStore): List<Badge> {
         Badge("🌳", "100 фраз", "Выучи 100 карточек", learned >= 100),
         Badge("🎬", "Слушатель", "Прослушай 5 разных диалогов", dialogsDone >= 5),
         Badge("📚", "Читатель", "Пройди 3 истории", storiesDone >= 3),
-        Badge("📖", "Все истории", "Пройди все истории", storiesDone >= Stories.all.size),
+        Badge("📖", "Все истории", "Пройди все истории", storiesDone >= Stories.everything.size),
         Badge("📝", "Дневник", "Сделай 7 записей в дневнике", store.counter("diary") >= 7),
         Badge("🤖", "Собеседник", "Отправь ИИ 20 сообщений", store.counter("chat") >= 20),
         Badge("⭐", "Коллекционер", "Добавь 20 своих слов", MyWords.items.size >= 20),
@@ -47,7 +47,7 @@ fun badges(store: ProgressStore): List<Badge> {
 
 @Composable
 fun ProgressScreen(store: ProgressStore, onExit: () -> Unit) {
-    val (level, inLevel, need) = remember { store.level() }
+    val (level, inLevel, need) = remember { store.xpLevel() }
     val week = remember { store.week() }
     val list = remember { badges(store) }
     val learned = remember { Deck.entries.flatMap { it.items }.distinctBy { it.id }.count { store.box(it.id) >= 3 } }

@@ -22,7 +22,13 @@ private fun s(en: String, ru: String) = Sentence(en, ru)
 private fun q(q: String, a: String, ru: String, vararg keys: String) = Question(q, a, ru, keys.toList())
 
 object Stories {
-    val levelNames = mapOf(1 to "Уровень 1 · Начальный", 2 to "Уровень 2 · Базовый", 3 to "Уровень 3 · Средний")
+    val levelNames = mapOf(
+        1 to "Уровень 1 · Начальный", 2 to "Уровень 2 · Базовый",
+        3 to "Уровень 3 · Средний", 4 to "Уровень 4 · Продвинутый",
+    )
+
+    /** Все истории, включая продвинутые. */
+    val everything: List<Story> get() = all + AdvancedStories.all
 
     val all: List<Story> = listOf(
         Story(

@@ -8,6 +8,7 @@ enum class Deck(val title: String) {
     WORDS("Слова"),
     SLANG("Живая речь"),
     DIALOGS("Из диалогов"),
+    IDIOMS("Идиомы"),
     MINE("⭐ Мои слова");
 
     val items: List<Item>
@@ -17,6 +18,7 @@ enum class Deck(val title: String) {
             WORDS -> Content.words
             SLANG -> Slang.items
             DIALOGS -> Dialogues.items
+            IDIOMS -> Idioms.items
             MINE -> MyWords.items
         }
 }
