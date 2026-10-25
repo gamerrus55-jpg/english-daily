@@ -271,7 +271,9 @@ fun RoleplayScreen(d: Dialogue, speaker: Speaker, store: ProgressStore, onExit: 
             itemsIndexed(d.lines.take((pos + 1).coerceAtMost(d.lines.size))) { i, line ->
                 val mine = line.who == r
                 val res = results[i]
-                Bubble(line.who, mine = mine, active = !mine && i == pos, grad = grad) {
+                Bubble(line.who, mine = mine, active = !mine && i == pos, grad = grad, onClick = {
+                    if (!mine || res != null) speaker.say(line.en)
+                }) {
                     val onActive = !mine && i == pos
                     Text(
                         if (mine) "Ты" else if (line.who == 1) "B" else "A",
@@ -290,7 +292,7 @@ fun RoleplayScreen(d: Dialogue, speaker: Speaker, store: ProgressStore, onExit: 
                         }
                         res != null -> {
                             ScoredText(res)
-                            Hint("${res.percent}% · «${res.heard}»")
+                            Hint("${res.percent}% · «${res.heard}» · 🔊 нажми, чтобы послушать")
                         }
                         else -> {
                             Text("Скажи: ${line.ru}", style = MaterialTheme.typography.titleMedium)

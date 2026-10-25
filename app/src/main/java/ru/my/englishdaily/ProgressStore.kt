@@ -1,12 +1,16 @@
 package ru.my.englishdaily
 
 import android.content.Context
+import org.json.JSONArray
+import org.json.JSONObject
 import java.time.LocalDate
 
 /**
- * Интервальные повторения (система «коробок»).
- * Ошибся — карточка в коробке 0 и скоро вернётся.
- * Вспомнил — переезжает в следующую коробку и вернётся через 1, 3, 7, 16, 35 дней.
+ * Весь прогресс хранится на телефоне.
+ *
+ * Интервальные повторения (система «коробок»):
+ * ошибся — карточка в коробке 0 и скоро вернётся;
+ * вспомнил — переезжает в следующую коробку и вернётся через 1, 3, 7, 16, 35 дней.
  */
 class ProgressStore(context: Context) {
 
@@ -15,6 +19,7 @@ class ProgressStore(context: Context) {
     private val dayMs = 24L * 60 * 60 * 1000
 
     private fun raw(id: String): String? = prefs.getString(id, null)
+    private fun day(): Long = LocalDate.now().toEpochDay()
 
     fun isNew(id: String): Boolean = raw(id) == null
 
@@ -27,7 +32,7 @@ class ProgressStore(context: Context) {
         val now = System.currentTimeMillis()
         val due = if (newBox == 0) now + 60_000 else now + intervalDays[newBox] * dayMs
         prefs.edit().putString(id, "$newBox|$due").apply()
-        markActiveToday()
+        activity(if (correct) 10 else 3)
     }
 
     /** Набор на одно занятие: сначала то, что пора повторить, потом немного новых. */
@@ -63,37 +68,106 @@ class ProgressStore(context: Context) {
         return Stats(fresh, due, learned, items.size)
     }
 
+    // ---------- Диалоги, истории и прочие счётчики ----------
+
     fun listened(dialogueId: String): Int = prefs.getInt("_dl_$dialogueId", 0)
 
     fun markListened(dialogueId: String) {
         prefs.edit().putInt("_dl_$dialogueId", listened(dialogueId) + 1).apply()
-        markActiveToday()
+        bump("dialogs")
+        activity(15)
+    }
+
+    fun counter(name: String): Int = prefs.getInt("_c_$name", 0)
+
+    /** Увеличить счётчик (истории, дневник, сообщения ИИ…) и начислить опыт. */
+    fun bump(name: String, xp: Int = 0) {
+        prefs.edit().putInt("_c_$name", counter(name) + 1).apply()
+        if (xp > 0) activity(xp)
+    }
+
+    fun storyBest(id: String): Int = prefs.getInt("_st_$id", -1)
+
+    fun saveStoryResult(id: String, percent: Int) {
+        if (percent > storyBest(id)) prefs.edit().putInt("_st_$id", percent).apply()
+        bump("stories", xp = 30)
+    }
+
+    // ---------- Опыт, уровни, активность по дням ----------
+
+    val xp: Int get() = prefs.getInt("_xp", 0)
+
+    /** Уровень и прогресс до следующего: (уровень, набрано на уровне, нужно на уровень). */
+    fun level(): Triple<Int, Int, Int> {
+        var level = 1
+        var rest = xp
+        var need = 100
+        while (rest >= need) {
+            rest -= need
+            level++
+            need = 100 + 50 * (level - 1)
+        }
+        return Triple(level, rest, need)
+    }
+
+    /** Сколько действий сделано сегодня — для кольца «цель дня». */
+    fun today(): Int = prefs.getInt("_h_${day()}", 0)
+
+    /** Активность за последние 7 дней, от старого к сегодняшнему. */
+    fun week(): List<Int> {
+        val d = day()
+        return (6 downTo 0).map { prefs.getInt("_h_${d - it}", 0) }
+    }
+
+    private fun activity(xpGain: Int) {
+        val d = day()
+        val e = prefs.edit()
+            .putInt("_xp", xp + xpGain)
+            .putInt("_h_$d", today() + 1)
+        val last = prefs.getLong("_last_day", -10)
+        if (last != d) {
+            val streak = if (last == d - 1) prefs.getInt("_streak", 0) + 1 else 1
+            e.putLong("_last_day", d).putInt("_streak", streak)
+            if (streak > prefs.getInt("_best_streak", 0)) e.putInt("_best_streak", streak)
+        }
+        e.apply()
     }
 
     fun streak(): Int {
-        val today = LocalDate.now().toEpochDay()
         val last = prefs.getLong("_last_day", -10)
-        return if (last >= today - 1) prefs.getInt("_streak", 0) else 0
+        return if (last >= day() - 1) prefs.getInt("_streak", 0) else 0
     }
 
-    /** Сколько карточек пройдено сегодня — для кольца «цель дня». */
-    fun today(): Int {
-        val day = LocalDate.now().toEpochDay()
-        return if (prefs.getLong("_today_day", -1) == day) prefs.getInt("_today_n", 0) else 0
+    val bestStreak: Int get() = maxOf(prefs.getInt("_best_streak", 0), streak())
+
+    // ---------- Настройки ----------
+
+    var apiKey: String
+        get() = prefs.getString("_api_key", "").orEmpty()
+        set(value) = prefs.edit().putString("_api_key", value.trim()).apply()
+
+    // ---------- Дневник ----------
+
+    data class DiaryEntry(val day: Long, val text: String, val corrected: String, val notes: String)
+
+    fun diary(): List<DiaryEntry> {
+        val arr = JSONArray(prefs.getString("_diary", "[]"))
+        return (0 until arr.length()).map {
+            val o = arr.getJSONObject(it)
+            DiaryEntry(o.getLong("day"), o.optString("text"), o.optString("corrected"), o.optString("notes"))
+        }.sortedByDescending { it.day }
     }
 
-    private fun countToday() {
-        val day = LocalDate.now().toEpochDay()
-        val n = today() + 1
-        prefs.edit().putLong("_today_day", day).putInt("_today_n", n).apply()
-    }
+    fun todayDiary(): DiaryEntry? = diary().firstOrNull { it.day == day() }
 
-    private fun markActiveToday() {
-        countToday()
-        val today = LocalDate.now().toEpochDay()
-        val last = prefs.getLong("_last_day", -10)
-        if (last == today) return
-        val streak = if (last == today - 1) prefs.getInt("_streak", 0) + 1 else 1
-        prefs.edit().putLong("_last_day", today).putInt("_streak", streak).apply()
+    fun saveDiary(text: String, corrected: String, notes: String) {
+        val isNewDay = todayDiary() == null
+        val list = diary().filter { it.day != day() } + DiaryEntry(day(), text, corrected, notes)
+        val arr = JSONArray()
+        list.forEach {
+            arr.put(JSONObject().put("day", it.day).put("text", it.text).put("corrected", it.corrected).put("notes", it.notes))
+        }
+        prefs.edit().putString("_diary", arr.toString()).apply()
+        if (isNewDay) bump("diary", xp = 20)
     }
 }

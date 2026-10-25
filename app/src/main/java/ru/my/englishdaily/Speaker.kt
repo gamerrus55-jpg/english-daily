@@ -100,6 +100,14 @@ class Speaker(context: Context) {
         en.speak(text, TextToSpeech.QUEUE_FLUSH, null, "s" + counter.incrementAndGet())
     }
 
+    /** Сказать по-русски сразу (для кнопок). */
+    fun sayRu(text: String) {
+        if (!ruReady) return
+        stop()
+        ru.setSpeechRate(1.0f)
+        ru.speak(text, TextToSpeech.QUEUE_FLUSH, null, "r" + counter.incrementAndGet())
+    }
+
     /** Сказать по-английски и дождаться конца фразы. */
     suspend fun speakEn(text: String, secondVoice: Boolean = false, rate: Float = speed.rate) {
         if (!ready) return

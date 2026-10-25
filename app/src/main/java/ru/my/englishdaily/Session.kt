@@ -63,7 +63,14 @@ fun SessionScreen(s: Screen.Session, speaker: Speaker, store: ProgressStore, onE
             grad = s.mode.grad
         )
 
-        if (index >= queue.size) {
+        if (s.items.isEmpty()) {
+            Spacer(Modifier.weight(1f))
+            BigText("Здесь пока пусто")
+            Spacer(Modifier.height(8.dp))
+            Hint("Добавь слова в «⭐ Мои слова»: в разговорнике или в историях — нажми на слово и «＋ В мои слова».", center = true)
+            Spacer(Modifier.weight(1f))
+            GradientButton("На главную", onExit, Modifier.fillMaxWidth(), grad = s.mode.grad)
+        } else if (index >= queue.size) {
             FinishView(s.mode, correct, answered, onExit)
         } else {
             val item = queue[index]
@@ -502,6 +509,8 @@ private fun SpeakCard(
                 ScoredText(sc)
                 Spacer(Modifier.height(6.dp))
                 Hint("Услышал: «${sc.heard}»")
+                Spacer(Modifier.height(10.dp))
+                SpeakRow(item.en, speaker)
             }
             Spacer(Modifier.height(4.dp))
         } else if (!repeat && revealed) {

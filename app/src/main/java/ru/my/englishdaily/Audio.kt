@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private enum class Phase(val emoji: String, val label: String) {
     LISTEN("🎧", "Слушай"),
@@ -30,6 +31,17 @@ fun AudioLessonScreen(items: List<Item>, speaker: Speaker, onExit: () -> Unit) {
     var phase by remember { mutableStateOf(Phase.LISTEN) }
 
     val view = LocalView.current
+    val scope = rememberCoroutineScope()
+
+    // Повтор: ставим на паузу и проигрываем фразу ещё раз
+    fun replay(english: Boolean, slow: Boolean = false) {
+        val item = items.getOrNull(index) ?: return
+        playing = false
+        scope.launch {
+            kotlinx.coroutines.delay(150)
+            if (english) speaker.say(item.en, slow) else speaker.sayRu(ruForSpeech(item.ru))
+        }
+    }
     DisposableEffect(Unit) {
         view.keepScreenOn = true
         onDispose {
@@ -39,10 +51,7 @@ fun AudioLessonScreen(items: List<Item>, speaker: Speaker, onExit: () -> Unit) {
     }
 
     LaunchedEffect(playing, restart) {
-        if (!playing) {
-            speaker.stop()
-            return@LaunchedEffect
-        }
+        if (!playing) return@LaunchedEffect
         delay(300)
         while (index < items.size) {
             val item = items[index]
@@ -105,6 +114,12 @@ fun AudioLessonScreen(items: List<Item>, speaker: Speaker, onExit: () -> Unit) {
                 Spacer(Modifier.height(14.dp))
                 val showEn = phase == Phase.ANSWER || phase == Phase.REPEAT || !playing
                 BigText(if (showEn) item.en else "· · ·", color = grad.a)
+                Spacer(Modifier.height(14.dp))
+                Row(Modifier.align(Alignment.CenterHorizontally), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Pill("🔊 Ещё раз", { replay(true) })
+                    Pill("🐢", { replay(true, slow = true) })
+                    if (speaker.ruReady) Pill("🇷🇺", { replay(false) })
+                }
             }
 
             Spacer(Modifier.weight(1f))

@@ -26,6 +26,12 @@ sealed interface Screen {
     data class Browse(val deck: Deck) : Screen
     data class Session(val mode: Mode, val deck: Deck, val items: List<Item>) : Screen
     data class Audio(val deck: Deck, val items: List<Item>) : Screen
+    data object StoryList : Screen
+    data class StoryView(val story: Story) : Screen
+    data object Diary : Screen
+    data object AiChat : Screen
+    data object Settings : Screen
+    data object Progress : Screen
 }
 
 @Composable
@@ -64,6 +70,7 @@ fun App(speaker: Speaker, store: ProgressStore) {
                         },
                         onBrowse = { screen = Screen.Browse(deck) },
                         onDialogs = { roleplay -> screen = Screen.DialogList(roleplay) },
+                        onOpen = { screen = it },
                     )
 
                     is Screen.DialogList -> {
@@ -104,6 +111,37 @@ fun App(speaker: Speaker, store: ProgressStore) {
                     is Screen.Audio -> {
                         BackHandler(onBack = goHome)
                         AudioLessonScreen(s.items, speaker, onExit = goHome)
+                    }
+
+                    Screen.StoryList -> {
+                        BackHandler(onBack = goHome)
+                        StoryListScreen(store, onOpen = { screen = Screen.StoryView(it) }, onExit = goHome)
+                    }
+
+                    is Screen.StoryView -> {
+                        val back = { screen = Screen.StoryList }
+                        BackHandler(onBack = back)
+                        StoryScreen(s.story, speaker, store, onExit = back)
+                    }
+
+                    Screen.Diary -> {
+                        BackHandler(onBack = goHome)
+                        DiaryScreen(store, speaker, onSettings = { screen = Screen.Settings }, onExit = goHome)
+                    }
+
+                    Screen.AiChat -> {
+                        BackHandler(onBack = goHome)
+                        AiChatScreen(store, speaker, onSettings = { screen = Screen.Settings }, onExit = goHome)
+                    }
+
+                    Screen.Settings -> {
+                        BackHandler(onBack = goHome)
+                        SettingsScreen(store, onExit = goHome)
+                    }
+
+                    Screen.Progress -> {
+                        BackHandler(onBack = goHome)
+                        ProgressScreen(store, onExit = goHome)
                     }
                 }
             }

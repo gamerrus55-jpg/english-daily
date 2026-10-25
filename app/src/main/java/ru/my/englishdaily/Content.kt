@@ -7,7 +7,8 @@ enum class Deck(val title: String) {
     PHRASES("Фразы"),
     WORDS("Слова"),
     SLANG("Живая речь"),
-    DIALOGS("Из диалогов");
+    DIALOGS("Из диалогов"),
+    MINE("⭐ Мои слова");
 
     val items: List<Item>
         get() = when (this) {
@@ -16,6 +17,7 @@ enum class Deck(val title: String) {
             WORDS -> Content.words
             SLANG -> Slang.items
             DIALOGS -> Dialogues.items
+            MINE -> MyWords.items
         }
 }
 

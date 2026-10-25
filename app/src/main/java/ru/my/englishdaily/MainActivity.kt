@@ -13,6 +13,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        MyWords.init(this)
         speaker = Speaker(this)
         store = ProgressStore(this)
         setContent { App(speaker, store) }
