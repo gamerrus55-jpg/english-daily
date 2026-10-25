@@ -76,7 +76,20 @@ class ProgressStore(context: Context) {
         return if (last >= today - 1) prefs.getInt("_streak", 0) else 0
     }
 
+    /** Сколько карточек пройдено сегодня — для кольца «цель дня». */
+    fun today(): Int {
+        val day = LocalDate.now().toEpochDay()
+        return if (prefs.getLong("_today_day", -1) == day) prefs.getInt("_today_n", 0) else 0
+    }
+
+    private fun countToday() {
+        val day = LocalDate.now().toEpochDay()
+        val n = today() + 1
+        prefs.edit().putLong("_today_day", day).putInt("_today_n", n).apply()
+    }
+
     private fun markActiveToday() {
+        countToday()
         val today = LocalDate.now().toEpochDay()
         val last = prefs.getLong("_last_day", -10)
         if (last == today) return

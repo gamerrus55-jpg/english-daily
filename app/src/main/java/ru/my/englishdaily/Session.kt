@@ -1,10 +1,13 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@file:OptIn(ExperimentalLayoutApi::class)
 
 package ru.my.englishdaily
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -12,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -31,8 +35,14 @@ fun SessionScreen(s: Screen.Session, speaker: Speaker, store: ProgressStore, onE
     var index by remember(s) { mutableIntStateOf(0) }
     var correct by remember(s) { mutableIntStateOf(0) }
     var answered by remember(s) { mutableIntStateOf(0) }
+    val recognizer = rememberRecognizer()
 
-    DisposableEffect(Unit) { onDispose { speaker.stop() } }
+    DisposableEffect(Unit) {
+        onDispose {
+            speaker.stop()
+            recognizer.cancel()
+        }
+    }
 
     fun onResult(item: Item, ok: Boolean) {
         store.answer(item.id, ok)
@@ -46,46 +56,36 @@ fun SessionScreen(s: Screen.Session, speaker: Speaker, store: ProgressStore, onE
     }
 
     Column(Modifier.fillMaxSize()) {
-        TopBar(
-            s.mode.title + " · " + s.deck.title,
-            onExit,
-            right = if (index < queue.size) "${index + 1}/${queue.size}" else null
+        SessionBar(
+            onExit = onExit,
+            progress = if (queue.isEmpty()) 1f else index.toFloat() / queue.size,
+            counter = if (index < queue.size) "${index + 1}/${queue.size}" else null,
+            grad = s.mode.grad
         )
-        LinearProgressIndicator(
-            progress = { if (queue.isEmpty()) 1f else index.toFloat() / queue.size },
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(Modifier.height(20.dp))
 
         if (index >= queue.size) {
-            FinishView(correct, answered, onExit)
+            FinishView(s.mode, correct, answered, onExit)
         } else {
             val item = queue[index]
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconTile(s.mode.emoji, s.mode.grad, 34.dp)
+                Spacer(Modifier.width(10.dp))
+                Column {
+                    Text(s.mode.title, style = MaterialTheme.typography.titleMedium)
+                    Hint(if (item.group.isNotEmpty()) item.group else s.deck.title)
+                }
+            }
+            Spacer(Modifier.height(18.dp))
             key(index) {
+                val next: () -> Unit = { index++ }
+                val answer: (Boolean) -> Unit = { ok -> onResult(item, ok) }
                 when (s.mode) {
-                    Mode.RECALL -> RecallCard(item, speaker) { ok ->
-                        onResult(item, ok)
-                        index++
-                    }
-
-                    Mode.BUILD -> BuildCard(
-                        item, speaker,
-                        onAnswer = { ok -> onResult(item, ok) },
-                        onNext = { index++ }
-                    )
-
-                    Mode.LISTEN -> ListenCard(
-                        item, s.deck.items, speaker,
-                        onAnswer = { ok -> onResult(item, ok) },
-                        onNext = { index++ }
-                    )
-
-                    Mode.DICTATION -> DictationCard(
-                        item, speaker,
-                        onAnswer = { ok -> onResult(item, ok) },
-                        onNext = { index++ }
-                    )
-
+                    Mode.RECALL -> RecallCard(item, speaker, s.mode.grad) { ok -> answer(ok); next() }
+                    Mode.BUILD -> BuildCard(item, speaker, s.mode.grad, answer, next)
+                    Mode.LISTEN -> ListenCard(item, s.deck.items, speaker, s.mode.grad, answer, next)
+                    Mode.DICTATION -> DictationCard(item, speaker, s.mode.grad, answer, next)
+                    Mode.SPEAK -> SpeakCard(item, speaker, recognizer, s.mode.grad, repeat = false, answer, next)
+                    Mode.REPEAT -> SpeakCard(item, speaker, recognizer, s.mode.grad, repeat = true, answer, next)
                     Mode.AUDIO -> Text("Аудиоурок открывается отдельно")
                 }
             }
@@ -94,28 +94,49 @@ fun SessionScreen(s: Screen.Session, speaker: Speaker, store: ProgressStore, onE
 }
 
 @Composable
-private fun ColumnScope.FinishView(correct: Int, answered: Int, onExit: () -> Unit) {
+private fun ColumnScope.FinishView(mode: Mode, correct: Int, answered: Int, onExit: () -> Unit) {
+    val ratio = if (answered == 0) 1f else correct.toFloat() / answered
     Spacer(Modifier.weight(1f))
-    Text("🎉", style = MaterialTheme.typography.displayLarge, modifier = Modifier.align(Alignment.CenterHorizontally))
-    Text(
-        "Готово!",
-        style = MaterialTheme.typography.headlineMedium,
-        modifier = Modifier.align(Alignment.CenterHorizontally)
+    Box(Modifier.align(Alignment.CenterHorizontally)) {
+        ProgressRing(ratio, 160.dp, 14.dp, MaterialTheme.colorScheme.surfaceVariant, mode.grad.a) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("${(ratio * 100).toInt()}%", style = MaterialTheme.typography.headlineLarge)
+                Hint("верно")
+            }
+        }
+    }
+    Spacer(Modifier.height(24.dp))
+    BigText(
+        when {
+            ratio >= 0.9f -> "Отлично! 🎉"
+            ratio >= 0.6f -> "Хорошая работа! 💪"
+            else -> "Ошибки — это нормально 🙂"
+        }
     )
-    Text(
-        "Правильно: $correct из $answered",
-        style = MaterialTheme.typography.titleMedium,
-        textAlign = TextAlign.Center,
-        modifier = Modifier.align(Alignment.CenterHorizontally)
-    )
+    Spacer(Modifier.height(6.dp))
+    Hint("Правильно: $correct из $answered. Ошибки вернутся на повторение.", center = true)
     Spacer(Modifier.weight(1f))
-    Button(onClick = onExit, modifier = Modifier.fillMaxWidth()) { Text("На главную") }
+    GradientButton("На главную", onExit, Modifier.fillMaxWidth(), grad = mode.grad)
+}
+
+/** Большая карточка с фразой. */
+@Composable
+private fun PromptCard(label: String, text: String, sub: String? = null) {
+    SoftCard(Modifier.fillMaxWidth(), radius = 28.dp) {
+        Hint(label, center = true)
+        Spacer(Modifier.height(10.dp))
+        BigText(text)
+        if (sub != null) {
+            Spacer(Modifier.height(8.dp))
+            Hint(sub, center = true)
+        }
+    }
 }
 
 // ---------- ⚡ Вспомни быстро ----------
 
 @Composable
-private fun RecallCard(item: Item, speaker: Speaker, onDone: (Boolean) -> Unit) {
+private fun RecallCard(item: Item, speaker: Speaker, grad: Grad, onDone: (Boolean) -> Unit) {
     val totalMs = 3000L + 600L * item.en.split(" ").size
     var revealed by remember { mutableStateOf(false) }
     var done by remember { mutableStateOf(false) }
@@ -130,7 +151,7 @@ private fun RecallCard(item: Item, speaker: Speaker, onDone: (Boolean) -> Unit) 
                 revealed = true
                 break
             }
-            delay(50)
+            delay(40)
         }
     }
     LaunchedEffect(revealed) {
@@ -143,46 +164,24 @@ private fun RecallCard(item: Item, speaker: Speaker, onDone: (Boolean) -> Unit) 
         onDone(ok)
     }
 
-    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("Как сказать по-английски?", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        if (item.group.isNotEmpty()) {
-            Text(item.group, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-        }
-        Spacer(Modifier.height(16.dp))
-        Text(item.ru, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(28.dp))
+    Column(Modifier.fillMaxSize()) {
+        PromptCard("Как сказать по-английски?", item.ru)
+        Spacer(Modifier.height(20.dp))
 
         if (!revealed) {
-            LinearProgressIndicator(
-                progress = { left },
-                modifier = Modifier.fillMaxWidth(),
-                color = if (left < 0.3f) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-            )
-            Spacer(Modifier.height(8.dp))
-            Text("Скажи вслух, потом проверь себя", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            PillProgress(left, Modifier.fillMaxWidth(), if (left < 0.3f) Grads.Speak else grad, height = 10.dp)
+            Spacer(Modifier.height(10.dp))
+            Hint("Скажи вслух, потом проверь себя", center = true)
             Spacer(Modifier.weight(1f))
-            Button(onClick = { revealed = true }, modifier = Modifier.fillMaxWidth()) {
-                Text("Показать ответ")
-            }
+            GradientButton("Показать ответ", { revealed = true }, Modifier.fillMaxWidth(), grad = grad)
         } else {
-            Text(
-                item.en,
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center
-            )
-            Spacer(Modifier.height(16.dp))
-            SpeakRow(item.en, speaker)
+            BigText(item.en, color = grad.a)
+            Spacer(Modifier.height(14.dp))
+            Box(Modifier.align(Alignment.CenterHorizontally)) { SpeakRow(item.en, speaker) }
             Spacer(Modifier.weight(1f))
-            Row(Modifier.fillMaxWidth()) {
-                OutlinedButton(onClick = { finish(false) }, modifier = Modifier.weight(1f)) {
-                    Text("Не вспомнил")
-                }
-                Spacer(Modifier.width(12.dp))
-                Button(onClick = { finish(true) }, modifier = Modifier.weight(1f)) {
-                    Text("Вспомнил")
-                }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                SoftButton("Не вспомнил", { finish(false) }, Modifier.weight(1f))
+                GradientButton("Вспомнил", { finish(true) }, Modifier.weight(1f), grad = grad)
             }
         }
     }
@@ -191,7 +190,7 @@ private fun RecallCard(item: Item, speaker: Speaker, onDone: (Boolean) -> Unit) 
 // ---------- 🧩 Собери фразу ----------
 
 @Composable
-private fun BuildCard(item: Item, speaker: Speaker, onAnswer: (Boolean) -> Unit, onNext: () -> Unit) {
+private fun BuildCard(item: Item, speaker: Speaker, grad: Grad, onAnswer: (Boolean) -> Unit, onNext: () -> Unit) {
     val tokens = remember(item) { item.en.split(" ").filter { it.isNotBlank() } }
     val pool = remember(item) {
         val original = tokens.indices.toList()
@@ -205,20 +204,28 @@ private fun BuildCard(item: Item, speaker: Speaker, onAnswer: (Boolean) -> Unit,
     var result by remember(item) { mutableStateOf<Boolean?>(null) }
 
     Column(Modifier.fillMaxSize()) {
-        Text("Собери по-английски:", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(8.dp))
-        Text(item.ru, style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.height(20.dp))
+        PromptCard("Собери по-английски", item.ru)
+        Spacer(Modifier.height(16.dp))
 
-        Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            modifier = Modifier
+        val shape = RoundedCornerShape(20.dp)
+        Box(
+            Modifier
                 .fillMaxWidth()
-                .heightIn(min = 72.dp)
+                .heightIn(min = 76.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .border(
+                    2.dp,
+                    when (result) {
+                        true -> Good
+                        false -> Bad
+                        null -> Color.Transparent
+                    },
+                    shape
+                )
+                .padding(10.dp)
         ) {
             FlowRow(
-                Modifier.padding(10.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -227,7 +234,7 @@ private fun BuildCard(item: Item, speaker: Speaker, onAnswer: (Boolean) -> Unit,
                 }
             }
         }
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(18.dp))
 
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -245,29 +252,26 @@ private fun BuildCard(item: Item, speaker: Speaker, onAnswer: (Boolean) -> Unit,
 
         val r = result
         if (r == null) {
-            Button(
-                onClick = {
+            GradientButton(
+                "Проверить",
+                {
                     val ok = wordsOf(chosen.joinToString(" ") { tokens[it] }) == wordsOf(item.en)
                     result = ok
                     onAnswer(ok)
                     speaker.say(item.en)
                 },
-                enabled = chosen.size == tokens.size,
-                modifier = Modifier.fillMaxWidth()
-            ) { Text("Проверить") }
-        } else {
-            Text(
-                if (r) "✅ Верно!" else "❌ Правильно так:",
-                style = MaterialTheme.typography.titleLarge,
-                color = if (r) Good else MaterialTheme.colorScheme.error
+                Modifier.fillMaxWidth(),
+                grad = grad,
+                enabled = chosen.size == tokens.size
             )
-            if (!r) {
-                Text(item.en, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+        } else {
+            ResultBanner(r, if (r) "Верно! 🎉" else "Правильно так:") {
+                if (!r) Text(item.en, style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(10.dp))
+                SpeakRow(item.en, speaker)
             }
-            Spacer(Modifier.height(8.dp))
-            SpeakRow(item.en, speaker)
             Spacer(Modifier.height(12.dp))
-            Button(onClick = onNext, modifier = Modifier.fillMaxWidth()) { Text("Дальше") }
+            GradientButton("Дальше", onNext, Modifier.fillMaxWidth(), grad = grad)
         }
     }
 }
@@ -279,6 +283,7 @@ private fun ListenCard(
     item: Item,
     all: List<Item>,
     speaker: Speaker,
+    grad: Grad,
     onAnswer: (Boolean) -> Unit,
     onNext: () -> Unit,
 ) {
@@ -298,50 +303,56 @@ private fun ListenCard(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        Text("Послушай и выбери перевод", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(16.dp))
-        SpeakRow(item.en, speaker)
-        Spacer(Modifier.height(16.dp))
-        if (picked != null) {
-            Text(
-                item.en,
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(Modifier.height(12.dp))
+        SoftCard(Modifier.fillMaxWidth(), radius = 28.dp) {
+            Hint("Послушай и выбери перевод", center = true)
+            Spacer(Modifier.height(14.dp))
+            Box(Modifier.align(Alignment.CenterHorizontally)) { SpeakRow(item.en, speaker) }
+            if (picked != null) {
+                Spacer(Modifier.height(14.dp))
+                BigText(item.en, color = grad.a, style = MaterialTheme.typography.headlineSmall)
+            }
         }
+        Spacer(Modifier.height(16.dp))
 
         options.forEach { opt ->
             val p = picked
-            val highlighted = p != null && (opt == item || opt == p)
-            val bg = when {
-                p == null -> MaterialTheme.colorScheme.surfaceVariant
-                opt == item -> Good
-                opt == p -> MaterialTheme.colorScheme.error
-                else -> MaterialTheme.colorScheme.surfaceVariant
+            val state = when {
+                p == null -> 0
+                opt == item -> 1
+                opt == p -> 2
+                else -> 0
             }
-            Surface(
-                onClick = {
-                    if (picked == null) {
+            val shape = RoundedCornerShape(18.dp)
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 5.dp)
+                    .clip(shape)
+                    .background(
+                        when (state) {
+                            1 -> Good
+                            2 -> Bad
+                            else -> MaterialTheme.colorScheme.surface
+                        }
+                    )
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
+                    .clickable(enabled = p == null) {
                         picked = opt
                         onAnswer(opt == item)
                     }
-                },
-                shape = RoundedCornerShape(12.dp),
-                color = bg,
-                contentColor = if (highlighted) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 5.dp)
+                    .padding(18.dp)
             ) {
-                Text(opt.ru, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
+                Text(
+                    opt.ru,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (state == 0) MaterialTheme.colorScheme.onSurface else Color.White
+                )
             }
         }
 
         Spacer(Modifier.height(16.dp))
         if (picked != null) {
-            Button(onClick = onNext, modifier = Modifier.fillMaxWidth()) { Text("Дальше") }
+            GradientButton("Дальше", onNext, Modifier.fillMaxWidth(), grad = grad)
         }
     }
 }
@@ -349,11 +360,10 @@ private fun ListenCard(
 // ---------- ✍️ Диктант ----------
 
 @Composable
-private fun DictationCard(item: Item, speaker: Speaker, onAnswer: (Boolean) -> Unit, onNext: () -> Unit) {
+private fun DictationCard(item: Item, speaker: Speaker, grad: Grad, onAnswer: (Boolean) -> Unit, onNext: () -> Unit) {
     var text by remember(item) { mutableStateOf("") }
     var result by remember(item) { mutableStateOf<Boolean?>(null) }
     val expected = remember(item) { wordsOf(item.en) }
-    val errorColor = MaterialTheme.colorScheme.error
 
     LaunchedEffect(item) {
         delay(400)
@@ -373,19 +383,18 @@ private fun DictationCard(item: Item, speaker: Speaker, onAnswer: (Boolean) -> U
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        Text("Послушай и напиши по-английски", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(
-            "Слов: ${expected.size} · переключи клавиатуру на английский",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.height(12.dp))
-        SpeakRow(item.en, speaker)
+        SoftCard(Modifier.fillMaxWidth(), radius = 28.dp) {
+            Hint("Послушай и напиши по-английски", center = true)
+            Hint("Слов: ${expected.size} · включи английскую раскладку", center = true)
+            Spacer(Modifier.height(14.dp))
+            Box(Modifier.align(Alignment.CenterHorizontally)) { SpeakRow(item.en, speaker) }
+        }
         Spacer(Modifier.height(16.dp))
         OutlinedTextField(
             value = text,
             onValueChange = { if (result == null) text = it },
             modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
             placeholder = { Text("Пиши то, что слышишь") },
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Sentences,
@@ -399,44 +408,134 @@ private fun DictationCard(item: Item, speaker: Speaker, onAnswer: (Boolean) -> U
 
         val r = result
         if (r == null) {
-            Row(Modifier.fillMaxWidth()) {
-                OutlinedButton(onClick = { check(giveUp = true) }, modifier = Modifier.weight(1f)) {
-                    Text("Не знаю")
-                }
-                Spacer(Modifier.width(12.dp))
-                Button(onClick = { check() }, enabled = text.isNotBlank(), modifier = Modifier.weight(1f)) {
-                    Text("Проверить")
-                }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                SoftButton("Не знаю", { check(giveUp = true) }, Modifier.weight(1f))
+                GradientButton("Проверить", { check() }, Modifier.weight(1f), grad = grad, enabled = text.isNotBlank())
             }
         } else {
-            Text(
-                if (r) "✅ Всё верно!" else "❌ Есть ошибки",
-                style = MaterialTheme.typography.titleLarge,
-                color = if (r) Good else errorColor
-            )
-            if (!r && text.isNotBlank()) {
-                val got = wordsOf(text)
-                val annotated = buildAnnotatedString {
-                    append("Ты написал: ")
-                    got.forEachIndexed { i, w ->
-                        val okWord = i < expected.size && expected[i] == w
-                        withStyle(SpanStyle(color = if (okWord) Good else errorColor)) { append(w) }
-                        append(" ")
-                    }
-                    if (got.size < expected.size) {
-                        withStyle(SpanStyle(color = errorColor)) {
-                            append("… не хватает слов: ${expected.size - got.size}")
+            ResultBanner(r, if (r) "Всё верно! 🎉" else "Есть ошибки") {
+                if (!r && text.isNotBlank()) {
+                    val got = wordsOf(text)
+                    val annotated = buildAnnotatedString {
+                        append("Ты написал: ")
+                        got.forEachIndexed { i, w ->
+                            val okWord = i < expected.size && expected[i] == w
+                            withStyle(SpanStyle(color = if (okWord) Good else Bad, fontWeight = FontWeight.Bold)) { append(w) }
+                            append(" ")
+                        }
+                        if (got.size < expected.size) {
+                            withStyle(SpanStyle(color = Bad)) { append("… не хватает слов: ${expected.size - got.size}") }
                         }
                     }
+                    Spacer(Modifier.height(6.dp))
+                    Text(annotated, style = MaterialTheme.typography.bodyLarge)
                 }
-                Spacer(Modifier.height(4.dp))
-                Text(annotated, style = MaterialTheme.typography.bodyLarge)
+                Spacer(Modifier.height(8.dp))
+                Text(item.en, style = MaterialTheme.typography.titleLarge)
+                Hint(item.ru)
             }
-            Spacer(Modifier.height(8.dp))
-            Text(item.en, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
-            Text(item.ru, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(16.dp))
-            Button(onClick = onNext, modifier = Modifier.fillMaxWidth()) { Text("Дальше") }
+            GradientButton("Дальше", onNext, Modifier.fillMaxWidth(), grad = grad)
+        }
+    }
+}
+
+// ---------- 🎙 Скажи вслух / 🦜 Повтори ----------
+
+/**
+ * repeat = false: видишь русскую фразу, говоришь по-английски.
+ * repeat = true: слышишь и видишь английскую фразу, повторяешь за диктором.
+ * В зачёт идёт первая попытка, повторять можно сколько угодно.
+ */
+@Composable
+private fun SpeakCard(
+    item: Item,
+    speaker: Speaker,
+    recognizer: Recognizer,
+    grad: Grad,
+    repeat: Boolean,
+    onAnswer: (Boolean) -> Unit,
+    onNext: () -> Unit,
+) {
+    var scored by remember(item) { mutableStateOf<Scored?>(null) }
+    var counted by remember(item) { mutableStateOf(false) }
+    var revealed by remember(item) { mutableStateOf(repeat) }
+
+    LaunchedEffect(item) {
+        if (repeat) {
+            delay(400)
+            speaker.say(item.en)
+        }
+    }
+
+    fun count(ok: Boolean) {
+        if (counted) return
+        counted = true
+        onAnswer(ok)
+    }
+
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+    ) {
+        if (repeat) {
+            SoftCard(Modifier.fillMaxWidth(), radius = 28.dp) {
+                Hint("Послушай и повтори так же", center = true)
+                Spacer(Modifier.height(10.dp))
+                BigText(item.en)
+                Spacer(Modifier.height(6.dp))
+                Hint(item.ru, center = true)
+                Spacer(Modifier.height(12.dp))
+                Box(Modifier.align(Alignment.CenterHorizontally)) { SpeakRow(item.en, speaker) }
+            }
+        } else {
+            PromptCard("Скажи по-английски", item.ru)
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        val sc = scored
+        if (sc != null) {
+            ResultBanner(sc.ok, if (sc.ok) "Отлично! ${sc.percent}% 🎉" else "Почти! ${sc.percent}%") {
+                Spacer(Modifier.height(8.dp))
+                ScoredText(sc)
+                Spacer(Modifier.height(6.dp))
+                Hint("Услышал: «${sc.heard}»")
+            }
+            Spacer(Modifier.height(4.dp))
+        } else if (!repeat && revealed) {
+            BigText(item.en, color = grad.a)
+        }
+
+        MicButton(recognizer, speaker, grad) { heard ->
+            val result = scoreSpeech(item.en, heard)
+            scored = result
+            count(result.ok)
+            speaker.say(item.en)
+        }
+
+        Spacer(Modifier.height(12.dp))
+        if (counted) {
+            GradientButton("Дальше", onNext, Modifier.fillMaxWidth(), grad = grad)
+        } else {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (!repeat) {
+                    SoftButton("Подсказка", {
+                        revealed = true
+                        speaker.say(item.en)
+                        count(false)
+                    }, Modifier.weight(1f))
+                }
+                SoftButton("Пропустить", {
+                    count(false)
+                    onNext()
+                }, Modifier.weight(1f))
+            }
+        }
+        if (counted) {
+            Spacer(Modifier.height(8.dp))
+            Hint("Можно нажать на микрофон и попробовать ещё раз", center = true)
         }
     }
 }

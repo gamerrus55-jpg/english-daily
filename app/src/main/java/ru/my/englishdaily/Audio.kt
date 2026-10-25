@@ -1,24 +1,20 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
-
 package ru.my.englishdaily
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
-private enum class Phase(val label: String) {
-    LISTEN("🎧 Слушай"),
-    SAY("🗣 Скажи по-английски вслух!"),
-    ANSWER("✅ Правильный ответ"),
-    REPEAT("🔁 Повтори за диктором"),
-    DONE("🎉 Урок окончен"),
+private enum class Phase(val emoji: String, val label: String) {
+    LISTEN("🎧", "Слушай"),
+    SAY("🗣", "Скажи по-английски вслух!"),
+    ANSWER("✅", "Правильный ответ"),
+    REPEAT("🔁", "Повтори за диктором"),
+    DONE("🎉", "Урок окончен"),
 }
 
 /**
@@ -27,6 +23,7 @@ private enum class Phase(val label: String) {
  */
 @Composable
 fun AudioLessonScreen(items: List<Item>, speaker: Speaker, onExit: () -> Unit) {
+    val grad = Mode.AUDIO.grad
     var index by remember { mutableIntStateOf(0) }
     var playing by remember { mutableStateOf(true) }
     var restart by remember { mutableIntStateOf(0) }
@@ -78,65 +75,63 @@ fun AudioLessonScreen(items: List<Item>, speaker: Speaker, onExit: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        TopBar(
-            Mode.AUDIO.title,
-            onExit,
-            right = if (index < items.size) "${index + 1}/${items.size}" else null
-        )
-        LinearProgressIndicator(
-            progress = { if (items.isEmpty()) 1f else index.toFloat() / items.size },
-            modifier = Modifier.fillMaxWidth()
+        SessionBar(
+            onExit = onExit,
+            progress = if (items.isEmpty()) 1f else index.toFloat() / items.size,
+            counter = if (index < items.size) "${index + 1}/${items.size}" else null,
+            grad = grad
         )
 
         Spacer(Modifier.weight(1f))
 
         if (phase == Phase.DONE || index >= items.size) {
-            Text(Phase.DONE.label, style = MaterialTheme.typography.headlineMedium)
+            IconTile(Phase.DONE.emoji, grad, 96.dp)
+            Spacer(Modifier.height(20.dp))
+            BigText(Phase.DONE.label)
             Spacer(Modifier.height(8.dp))
-            Text("Фраз: ${items.size}. Повтори урок завтра — запомнится крепче.", textAlign = TextAlign.Center)
+            Hint("Фраз: ${items.size}. Повтори урок завтра — запомнится крепче.", center = true)
             Spacer(Modifier.weight(1f))
-            Button(onClick = onExit, modifier = Modifier.fillMaxWidth()) { Text("На главную") }
+            GradientButton("На главную", onExit, Modifier.fillMaxWidth(), grad = grad)
         } else {
             val item = items[index]
-            Text(
-                if (playing) phase.label else "⏸ Пауза",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary,
-                textAlign = TextAlign.Center
-            )
-            Spacer(Modifier.height(24.dp))
-            Text(item.ru, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+            val shown = if (playing) phase else null
+            IconTile(shown?.emoji ?: "⏸", grad, 96.dp)
             Spacer(Modifier.height(16.dp))
-            val showEn = phase == Phase.ANSWER || phase == Phase.REPEAT || !playing
-            Text(
-                if (showEn) item.en else "…",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary,
-                textAlign = TextAlign.Center
-            )
+            BigText(shown?.label ?: "Пауза", color = grad.a, style = MaterialTheme.typography.titleLarge)
+            Spacer(Modifier.height(24.dp))
+
+            SoftCard(Modifier.fillMaxWidth(), radius = 28.dp) {
+                BigText(item.ru, style = MaterialTheme.typography.headlineSmall)
+                Spacer(Modifier.height(14.dp))
+                val showEn = phase == Phase.ANSWER || phase == Phase.REPEAT || !playing
+                BigText(if (showEn) item.en else "· · ·", color = grad.a)
+            }
 
             Spacer(Modifier.weight(1f))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                OutlinedButton(onClick = { jump(index - 1) }, enabled = index > 0) { Text("⏮") }
-                Button(onClick = {
-                    if (playing) {
-                        playing = false
-                    } else {
-                        playing = true
-                        restart++
-                    }
-                }) { Text(if (playing) "⏸ Пауза" else "▶ Продолжить") }
-                OutlinedButton(onClick = { jump(index + 1) }, enabled = index < items.size - 1) { Text("⏭") }
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SoftButton("⏮", { jump(index - 1) }, Modifier.width(72.dp), enabled = index > 0)
+                GradientButton(
+                    if (playing) "⏸ Пауза" else "▶ Продолжить",
+                    {
+                        if (playing) {
+                            playing = false
+                        } else {
+                            playing = true
+                            restart++
+                        }
+                    },
+                    Modifier.weight(1f),
+                    grad = grad
+                )
+                SoftButton("⏭", { jump(index + 1) }, Modifier.width(72.dp), enabled = index < items.size - 1)
             }
             Spacer(Modifier.height(12.dp))
-            Text(
-                "Экран не гаснет. Можно положить телефон и просто слушать и говорить.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
+            Hint("Экран не гаснет — можно положить телефон и просто слушать и говорить.", center = true)
         }
     }
 }

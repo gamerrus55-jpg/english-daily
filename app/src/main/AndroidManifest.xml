@@ -3,11 +3,16 @@
 
     <!-- Только для проверки обновлений -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Для режимов «Скажи вслух», «Повтори» и ролевой игры -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <!-- Нужно на Android 11+, чтобы приложение видело синтезатор речи -->
     <queries>
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
         </intent>
     </queries>
 
