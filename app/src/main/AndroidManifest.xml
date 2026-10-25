@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Только для проверки обновлений -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- Нужно на Android 11+, чтобы приложение видело синтезатор речи -->
     <queries>
         <intent>

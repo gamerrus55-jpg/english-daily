@@ -63,6 +63,13 @@ class ProgressStore(context: Context) {
         return Stats(fresh, due, learned, items.size)
     }
 
+    fun listened(dialogueId: String): Int = prefs.getInt("_dl_$dialogueId", 0)
+
+    fun markListened(dialogueId: String) {
+        prefs.edit().putInt("_dl_$dialogueId", listened(dialogueId) + 1).apply()
+        markActiveToday()
+    }
+
     fun streak(): Int {
         val today = LocalDate.now().toEpochDay()
         val last = prefs.getLong("_last_day", -10)

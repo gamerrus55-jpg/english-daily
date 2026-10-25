@@ -1,15 +1,21 @@
 package ru.my.englishdaily
 
-data class Item(val id: String, val en: String, val ru: String)
+data class Item(val id: String, val en: String, val ru: String, val group: String = "")
 
 enum class Deck(val title: String) {
+    COURSE("Курс"),
     PHRASES("Фразы"),
-    WORDS("Слова");
+    WORDS("Слова"),
+    SLANG("Живая речь"),
+    DIALOGS("Из диалогов");
 
     val items: List<Item>
         get() = when (this) {
+            COURSE -> Course.items
             PHRASES -> Content.phrases
             WORDS -> Content.words
+            SLANG -> Slang.items
+            DIALOGS -> Dialogues.items
         }
 }
 
