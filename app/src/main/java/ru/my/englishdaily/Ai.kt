@@ -104,7 +104,7 @@ object Ai {
             conn.requestMethod = "POST"
             conn.doOutput = true
             conn.connectTimeout = 15000
-            conn.readTimeout = 90000
+            conn.readTimeout = 180000
             headers.forEach { (k, v) -> conn.setRequestProperty(k, v) }
             conn.outputStream.use { it.write(body.toByteArray()) }
             val code = conn.responseCode

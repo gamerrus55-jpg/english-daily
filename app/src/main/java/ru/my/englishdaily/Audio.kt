@@ -30,6 +30,7 @@ fun AudioLessonScreen(items: List<Item>, speaker: Speaker, onExit: () -> Unit) {
     var restart by remember { mutableIntStateOf(0) }
     var phase by remember { mutableStateOf(Phase.LISTEN) }
 
+    val store = LocalStore.current
     val view = LocalView.current
     val scope = rememberCoroutineScope()
 
@@ -71,6 +72,8 @@ fun AudioLessonScreen(items: List<Item>, speaker: Speaker, onExit: () -> Unit) {
             speaker.speakEn(item.en)
             delay(1500L + 300L * words)
 
+            // Фраза пройдена — в следующий раз будут новые, а эта вернётся на повторение позже
+            store.answer(item.id, true)
             index++
         }
         phase = Phase.DONE

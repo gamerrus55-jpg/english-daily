@@ -24,8 +24,13 @@ sealed interface Screen {
     data class Dialog(val dialogue: Dialogue) : Screen
     data class Roleplay(val dialogue: Dialogue) : Screen
     data class Browse(val deck: Deck) : Screen
-    data class Session(val mode: Mode, val deck: Deck, val items: List<Item>) : Screen
-    data class Audio(val deck: Deck, val items: List<Item>) : Screen
+    data class Session(val mode: Mode, val deck: Deck, val items: List<Item>, val back: Screen? = null) : Screen
+    data class Audio(val deck: Deck, val items: List<Item>, val back: Screen? = null) : Screen
+    data object PathMap : Screen
+    data class UnitView(val n: Int) : Screen
+    data class PathGrammar(val n: Int, val lesson: GrammarLesson) : Screen
+    data class PathDialog(val n: Int, val dialogue: Dialogue) : Screen
+    data class PathRoleplay(val n: Int, val dialogue: Dialogue) : Screen
     data object StoryList : Screen
     data class StoryView(val story: Story) : Screen
     data object Diary : Screen
@@ -163,13 +168,57 @@ fun App(speaker: Speaker, store: ProgressStore) {
                     }
 
                     is Screen.Session -> {
-                        BackHandler(onBack = goHome)
-                        SessionScreen(s, speaker, store, onExit = goHome)
+                        val back = { screen = s.back ?: Screen.Home }
+                        BackHandler(onBack = back)
+                        SessionScreen(s, speaker, store, onExit = back)
                     }
 
                     is Screen.Audio -> {
+                        val back = { screen = s.back ?: Screen.Home }
+                        BackHandler(onBack = back)
+                        AudioLessonScreen(s.items, speaker, onExit = back)
+                    }
+
+                    Screen.PathMap -> {
                         BackHandler(onBack = goHome)
-                        AudioLessonScreen(s.items, speaker, onExit = goHome)
+                        PathMapScreen(store, onOpen = { screen = Screen.UnitView(it.n) }, onExit = goHome)
+                    }
+
+                    is Screen.UnitView -> {
+                        val unit = PathPlan.units[s.n - 1]
+                        val back = { screen = Screen.PathMap }
+                        BackHandler(onBack = back)
+                        PathUnitScreen(
+                            unit, store, speaker,
+                            onLearn = { mode, items ->
+                                screen = if (mode == Mode.AUDIO) Screen.Audio(Deck.PATH, items, back = s)
+                                else Screen.Session(mode, Deck.PATH, items, back = s)
+                            },
+                            onGrammar = { screen = Screen.PathGrammar(s.n, it) },
+                            onDialog = { screen = Screen.PathDialog(s.n, it) },
+                            onRoleplay = { screen = Screen.PathRoleplay(s.n, it) },
+                            onNext = { screen = Screen.UnitView(it.n) },
+                            onSettings = { screen = Screen.Settings },
+                            onExit = back
+                        )
+                    }
+
+                    is Screen.PathGrammar -> {
+                        val back = { screen = Screen.UnitView(s.n) }
+                        BackHandler(onBack = back)
+                        GrammarLessonScreen(s.lesson, speaker, store, onExit = back)
+                    }
+
+                    is Screen.PathDialog -> {
+                        val back = { screen = Screen.UnitView(s.n) }
+                        BackHandler(onBack = back)
+                        DialogScreen(s.dialogue, speaker, store, onRoleplay = { screen = Screen.PathRoleplay(s.n, s.dialogue) }, onExit = back)
+                    }
+
+                    is Screen.PathRoleplay -> {
+                        val back = { screen = Screen.UnitView(s.n) }
+                        BackHandler(onBack = back)
+                        RoleplayScreen(s.dialogue, speaker, store, onExit = back)
                     }
 
                     Screen.StoryList -> {

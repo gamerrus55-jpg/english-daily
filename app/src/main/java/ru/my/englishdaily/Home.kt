@@ -114,6 +114,22 @@ fun HomeScreen(
             }
         }
 
+        val pathDue = remember { store.stats(PathStore.allVocab()).due }
+        TodayCard(
+            store = store,
+            dueCount = pathDue,
+            onOpen = { WhatsNew.markSeen(store, "path"); onOpen(Screen.UnitView(it.n)) },
+            onReview = { onDeck(Deck.PATH); onStart(Mode.RECALL) }
+        )
+        WideTile(
+            emoji = "🗺",
+            title = "Курс A1 → C1",
+            hint = "80 уроков: пройдено ${PathPlan.units.count { PathProgress.done(store, it) }}. Открыть карту курса",
+            grad = Grads.Hero,
+            isNew = WhatsNew.isNew(store, "path"),
+            onClick = { WhatsNew.markSeen(store, "path"); onOpen(Screen.PathMap) }
+        )
+
         HeroCard(today = today, streak = streak, stats = stats, level = level.first, levelProgress = level.second.toFloat() / level.third, onClick = { onOpen(Screen.Progress) })
 
         if (latestBuild != null && latestBuild > Updater.currentBuild) {

@@ -15,6 +15,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         MyWords.init(this)
         Ai.init(this)
+        PathStore.init(this)
         speaker = Speaker(this)
         store = ProgressStore(this)
         store.initFirstBuild(BuildConfig.VERSION_CODE)

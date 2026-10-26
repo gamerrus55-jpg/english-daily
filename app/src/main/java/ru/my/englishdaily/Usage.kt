@@ -422,12 +422,22 @@ object Usages {
     }
 
     private val cache = mutableMapOf<String, List<Usage>>()
+    private val extra = mutableMapOf<String, Usage>()
+
+    /** Пример из урока курса (сгенерирован ИИ). */
+    fun register(item: Item, usage: Usage) {
+        val key = item.en.lowercase().trim()
+        if (extra[key] != usage) {
+            extra[key] = usage
+            cache.remove(key)
+        }
+    }
 
     /** Примеры для слова: сначала написанные вручную, иначе — фразы из приложения с этим словом. */
     fun forItem(item: Item): List<Usage> {
         val key = item.en.lowercase().trim()
         cache[key]?.let { return it }
-        val manual = multi[key]?.second ?: b2[key] ?: b1[key]
+        val manual = multi[key]?.second ?: b2[key] ?: b1[key] ?: extra[key]?.let { listOf(it) }
         val result = manual ?: run {
             // Ищем слово целиком во фразах приложения (не для длинных фраз)
             if (key.split(" ").size > 3) return@run emptyList()
