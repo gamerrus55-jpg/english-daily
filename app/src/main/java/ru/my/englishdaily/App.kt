@@ -82,6 +82,7 @@ fun App(speaker: Speaker, store: ProgressStore, askWho: Boolean = false) {
 
             /** Набор карточек под уровень: продвинутым больше новых и меньше повторов. */
             fun session(d: Deck, size: Int): List<Item> {
+                if (d == Deck.CORE) return store.buildSession(d.items, size, maxNew = size, ordered = true, dueCap = size / 2)
                 val (maxNew, dueCap) = when (level ?: Level.BEGINNER) {
                     Level.BEGINNER -> 8 to size
                     Level.INTERMEDIATE -> 10 to size * 2 / 3

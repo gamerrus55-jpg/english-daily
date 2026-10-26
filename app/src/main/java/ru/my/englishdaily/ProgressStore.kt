@@ -171,6 +171,11 @@ class ProgressStore(context: Context) {
         bump("sounds", xp = 15)
     }
 
+    /** Начинающий решил открыть всё, не дожидаясь 500 слов. */
+    var coreSkip: Boolean
+        get() = prefs.getBoolean("_core_skip", false)
+        set(value) = prefs.edit().putBoolean("_core_skip", value).apply()
+
     // ---------- Транскрипция ----------
 
     var showIpa: Boolean

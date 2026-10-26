@@ -114,6 +114,14 @@ fun HomeScreen(
             }
         }
 
+        if (Core.locked(store)) {
+            CoreStage(
+                store = store,
+                onTrain = { mode -> onDeck(Deck.CORE); onStart(mode) },
+                onGame = { game -> onDeck(Deck.CORE); onOpen(Screen.GameView(game, Deck.CORE)) },
+                onBrowse = { onDeck(Deck.CORE); onBrowse() },
+            )
+        } else {
         val pathDue = remember { store.stats(PathStore.allVocab()).due }
         val mineDue = remember(MyWords.version) { store.stats(MyWords.items).due + MyWords.items.count { store.isNew(it.id) } }
         TodayCard(
@@ -341,6 +349,8 @@ fun HomeScreen(
             grad = Grads.Book,
             onClick = onBrowse
         )
+
+        }
 
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
             Hint("Версия ${BuildConfig.VERSION_NAME}")

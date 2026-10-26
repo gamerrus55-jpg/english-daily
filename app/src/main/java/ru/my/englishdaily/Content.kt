@@ -3,6 +3,7 @@ package ru.my.englishdaily
 data class Item(val id: String, val en: String, val ru: String, val group: String = "")
 
 enum class Deck(val title: String, val singleWords: Boolean = false) {
+    CORE("🧱 500 главных слов", singleWords = true),
     PATH("🗺 Слова из уроков"),
     COURSE("Курс"),
     PHRASES("Фразы"),
@@ -20,6 +21,7 @@ enum class Deck(val title: String, val singleWords: Boolean = false) {
 
     val items: List<Item>
         get() = when (this) {
+            CORE -> Core.items
             PATH -> PathStore.allVocab()
             COURSE -> Course.items
             PHRASES -> Content.phrases
@@ -37,18 +39,19 @@ enum class Deck(val title: String, val singleWords: Boolean = false) {
         }
 
     /** Курс проходится строго по порядку, остальные колоды — вперемешку. */
-    val ordered: Boolean get() = this == COURSE
+    val ordered: Boolean get() = this == COURSE || this == CORE
 
     companion object {
         /** Колоды под уровень: сначала подходящие, слишком простые для продвинутых скрыты. */
         fun forLevel(level: Level): List<Deck> = when (level) {
-            Level.BEGINNER -> listOf(PATH, COURSE, PHRASES, WORDS, SLANG, DIALOGS, B1_WORDS, MULTI, MINE)
+            Level.BEGINNER -> listOf(CORE, PATH, COURSE, PHRASES, WORDS, SLANG, DIALOGS, B1_WORDS, MULTI, MINE)
             Level.INTERMEDIATE -> listOf(PATH, B1_WORDS, MULTI, COMPLEX, PHRASAL, SLANG, DIALOGS, IDIOMS, ADV_PHRASES, COURSE, PHRASES, MINE)
             Level.ADVANCED -> listOf(PATH, COMPLEX, B2_WORDS, MULTI, ADV_PHRASES, PHRASAL, IDIOMS, DIALOGS, SLANG, B1_WORDS, MINE)
         }
 
         /** Пояснение к колоде — показываем, когда её выбирают. */
         fun describe(d: Deck): String = when (d) {
+            CORE -> "Самые частые слова английского — с них начинается всё. По порядку частоты"
             PATH -> "Все слова из пройденных уроков курса A1 → C1 — для повторения"
             COURSE -> "32 разговорные конструкции от «I want to…» до «I used to…», по порядку"
             PHRASES -> "Бытовые фразы на каждый день"

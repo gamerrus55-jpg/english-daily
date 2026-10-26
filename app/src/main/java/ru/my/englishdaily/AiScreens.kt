@@ -122,6 +122,22 @@ fun SettingsScreen(store: ProgressStore, onLevel: () -> Unit, onExit: () -> Unit
         nameError?.let { Text(it, color = Bad, style = MaterialTheme.typography.bodyMedium) }
         Spacer(Modifier.height(18.dp))
 
+        // Стартовый этап для начинающих
+        if (store.level == Level.BEGINNER) {
+            var skip by remember { mutableStateOf(store.coreSkip) }
+            Text("500 главных слов", style = MaterialTheme.typography.titleLarge)
+            Hint(
+                if (skip) "Всё приложение открыто. Базовые слова остаются в колоде «🧱 500 главных слов»."
+                else "Пока не выучено ${Core.goal} базовых слов, остальное закрыто. Если базу уже знаешь — можно открыть всё сразу."
+            )
+            Spacer(Modifier.height(6.dp))
+            Pill(if (skip) "🔒 Снова начать с базовых слов" else "🔓 Открыть всё сейчас", {
+                skip = !skip
+                store.coreSkip = skip
+            }, selected = skip)
+            Spacer(Modifier.height(18.dp))
+        }
+
         // Транскрипция
         var ipaOn by remember { mutableStateOf(store.showIpa) }
         var ruOn by remember { mutableStateOf(store.showRuPron) }
