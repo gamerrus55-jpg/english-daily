@@ -14,6 +14,7 @@ enum class Deck(val title: String, val singleWords: Boolean = false) {
     ADV_PHRASES("Фразы B2+"),
     PHRASAL("Фразовые глаголы"),
     IDIOMS("Идиомы"),
+    MULTI("Одно слово — разные смыслы", singleWords = true),
     MINE("⭐ Мои слова");
 
     val items: List<Item>
@@ -29,6 +30,7 @@ enum class Deck(val title: String, val singleWords: Boolean = false) {
             ADV_PHRASES -> Vocab.phrases
             PHRASAL -> Vocab.phrasal
             IDIOMS -> Idioms.items
+            MULTI -> Usages.multiDeck
             MINE -> MyWords.items
         }
 
@@ -38,9 +40,9 @@ enum class Deck(val title: String, val singleWords: Boolean = false) {
     companion object {
         /** Колоды под уровень: сначала подходящие, слишком простые для продвинутых скрыты. */
         fun forLevel(level: Level): List<Deck> = when (level) {
-            Level.BEGINNER -> listOf(COURSE, PHRASES, WORDS, SLANG, DIALOGS, B1_WORDS, MINE)
-            Level.INTERMEDIATE -> listOf(B1_WORDS, COMPLEX, PHRASAL, SLANG, DIALOGS, IDIOMS, ADV_PHRASES, COURSE, PHRASES, MINE)
-            Level.ADVANCED -> listOf(COMPLEX, B2_WORDS, ADV_PHRASES, PHRASAL, IDIOMS, DIALOGS, SLANG, B1_WORDS, MINE)
+            Level.BEGINNER -> listOf(COURSE, PHRASES, WORDS, SLANG, DIALOGS, B1_WORDS, MULTI, MINE)
+            Level.INTERMEDIATE -> listOf(B1_WORDS, MULTI, COMPLEX, PHRASAL, SLANG, DIALOGS, IDIOMS, ADV_PHRASES, COURSE, PHRASES, MINE)
+            Level.ADVANCED -> listOf(COMPLEX, B2_WORDS, MULTI, ADV_PHRASES, PHRASAL, IDIOMS, DIALOGS, SLANG, B1_WORDS, MINE)
         }
 
         /** Пояснение к колоде — показываем, когда её выбирают. */
@@ -56,6 +58,7 @@ enum class Deck(val title: String, val singleWords: Boolean = false) {
             ADV_PHRASES -> "Фразы для спора, мнения и вежливой беседы"
             PHRASAL -> "Фразовые глаголы в живых предложениях"
             IDIOMS -> "Идиомы и устойчивые выражения"
+            MULTI -> "case, charge, fine, bill, claim… Одно слово в быту, на работе и в суде — с примерами"
             MINE -> "Твои слова из историй, сериалов и разговорника"
         }
     }

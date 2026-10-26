@@ -180,6 +180,7 @@ fun HomeScreen(
                 val key = when (d) {
                     Deck.COMPLEX -> "complex"
                     Deck.B2_WORDS -> "b2_life"
+                    Deck.MULTI -> "multi"
                     else -> null
                 }
                 Pill(
@@ -506,9 +507,10 @@ fun BrowseScreen(deck: Deck, store: ProgressStore, speaker: Speaker, onExit: () 
     val mine = deck == Deck.MINE
     var newEn by remember { mutableStateOf("") }
     var newRu by remember { mutableStateOf("") }
+    var opened by remember { mutableStateOf<String?>(null) }
     Column(Modifier.fillMaxSize()) {
         TopBar("📖 ${deck.title}", onExit, right = "${items.size}")
-        Hint("Нажми на фразу, чтобы услышать. Точки — прогресс, ✅ — выучено.")
+        Hint("Нажми на строку — услышишь и увидишь примеры употребления. Точки — прогресс, ✅ — выучено.")
         Spacer(Modifier.height(8.dp))
         LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (mine) {
@@ -557,7 +559,10 @@ fun BrowseScreen(deck: Deck, store: ProgressStore, speaker: Speaker, onExit: () 
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(18.dp))
                         .background(MaterialTheme.colorScheme.surface)
-                        .clickable { speaker.say(item.en) }
+                        .clickable {
+                            speaker.say(item.en)
+                            opened = if (opened == item.id) null else item.id
+                        }
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -579,6 +584,10 @@ fun BrowseScreen(deck: Deck, store: ProgressStore, speaker: Speaker, onExit: () 
                         Spacer(Modifier.width(10.dp))
                         Text("🗑", modifier = Modifier.clickable { MyWords.remove(item.id) })
                     }
+                }
+                if (opened == item.id) {
+                    Spacer(Modifier.height(6.dp))
+                    UsageBlock(item, speaker, store)
                 }
             }
             item { Spacer(Modifier.height(20.dp)) }

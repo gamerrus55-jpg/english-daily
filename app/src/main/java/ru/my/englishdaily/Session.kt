@@ -193,10 +193,18 @@ private fun RecallCard(item: Item, speaker: Speaker, grad: Grad, onDone: (Boolea
             Spacer(Modifier.height(10.dp))
             GradientButton("Показать ответ", { revealed = true }, Modifier.fillMaxWidth(), grad = grad)
         } else {
-            BigText(item.en, color = grad.a)
-            Spacer(Modifier.height(14.dp))
-            Box(Modifier.align(Alignment.CenterHorizontally)) { SpeakRow(item.en, speaker) }
-            Spacer(Modifier.weight(1f))
+            Column(
+                Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                BigText(item.en, color = grad.a)
+                Spacer(Modifier.height(14.dp))
+                Box(Modifier.align(Alignment.CenterHorizontally)) { SpeakRow(item.en, speaker) }
+                Spacer(Modifier.height(14.dp))
+                UsageBlock(item, speaker, LocalStore.current)
+            }
+            Spacer(Modifier.height(10.dp))
             KnownButton { if (!done) { done = true; onKnown() } }
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -372,6 +380,8 @@ private fun ListenCard(
 
         Spacer(Modifier.height(16.dp))
         if (picked != null) {
+            UsageBlock(item, speaker, LocalStore.current)
+            Spacer(Modifier.height(12.dp))
             GradientButton("Дальше", onNext, Modifier.fillMaxWidth(), grad = grad)
         }
     }
@@ -449,6 +459,8 @@ private fun DictationCard(item: Item, speaker: Speaker, grad: Grad, onAnswer: (B
                 Hint(item.ru)
             }
             Spacer(Modifier.height(16.dp))
+            UsageBlock(item, speaker, LocalStore.current)
+            Spacer(Modifier.height(12.dp))
             GradientButton("Дальше", onNext, Modifier.fillMaxWidth(), grad = grad)
         }
     }
@@ -533,6 +545,8 @@ private fun SpeakCard(
 
         Spacer(Modifier.height(12.dp))
         if (counted) {
+            UsageBlock(item, speaker, LocalStore.current)
+            Spacer(Modifier.height(12.dp))
             GradientButton("Дальше", onNext, Modifier.fillMaxWidth(), grad = grad)
         } else {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {

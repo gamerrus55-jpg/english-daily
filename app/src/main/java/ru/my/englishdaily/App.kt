@@ -42,8 +42,12 @@ sealed interface Screen {
     data object WhatsNewList : Screen
 }
 
+/** Хранилище прогресса — доступно любому экрану. */
+val LocalStore = staticCompositionLocalOf<ProgressStore> { error("ProgressStore не передан") }
+
 @Composable
 fun App(speaker: Speaker, store: ProgressStore) {
+    CompositionLocalProvider(LocalStore provides store) {
     AppTheme {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             var screen by remember { mutableStateOf<Screen>(Screen.Home) }
@@ -245,6 +249,7 @@ fun App(speaker: Speaker, store: ProgressStore) {
             }
         }
     }
+}
 }
 
 /** Слова фразы без знаков препинания — для сравнения ответов. */
