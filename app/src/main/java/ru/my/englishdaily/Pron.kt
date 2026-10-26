@@ -173,6 +173,8 @@ object Pron {
                 i++
             } else if (b == "Y") {
                 sb.append("й")
+            } else if (b == "NG" && i + 1 < ph.size && base(ph[i + 1]) in setOf("K", "G")) {
+                sb.append("н") // think → θинк, а не θингк
             } else {
                 sb.append(ruCons[b] ?: "")
             }
