@@ -52,7 +52,7 @@ sealed interface Screen {
 val LocalStore = staticCompositionLocalOf<ProgressStore> { error("ProgressStore не передан") }
 
 @Composable
-fun App(speaker: Speaker, store: ProgressStore) {
+fun App(speaker: Speaker, store: ProgressStore, askWho: Boolean = false) {
     CompositionLocalProvider(LocalStore provides store) {
     AppTheme {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -60,6 +60,8 @@ fun App(speaker: Speaker, store: ProgressStore) {
             var latestBuild by remember { mutableStateOf<Int?>(null) }
             var level by remember { mutableStateOf(store.level) }
             var playerName by remember { mutableStateOf(store.playerName) }
+            var whoAsked by remember { mutableStateOf(!askWho) }
+            val activity = androidx.compose.ui.platform.LocalContext.current as android.app.Activity
             var deck by remember {
                 val lvl = store.level ?: Level.BEGINNER
                 mutableStateOf(store.deck?.takeIf { it in Deck.forLevel(lvl) } ?: Deck.forLevel(lvl).first())
@@ -103,8 +105,14 @@ fun App(speaker: Speaker, store: ProgressStore) {
                     .safeDrawingPadding()
                     .padding(horizontal = 18.dp, vertical = 12.dp)
             ) {
-                if (playerName.isBlank()) {
-                    NamePicker("") { name ->
+                if (!whoAsked) {
+                    WhoIsHere(
+                        name = playerName,
+                        onContinue = { whoAsked = true },
+                        onNew = { Profiles.createAndSwitch(activity) }
+                    )
+                } else if (playerName.isBlank()) {
+                    NamePicker("", store) { name ->
                         store.playerName = name
                         playerName = name
                     }

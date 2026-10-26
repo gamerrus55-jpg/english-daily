@@ -185,10 +185,34 @@ private fun PlayerRow(place: Int, p: PlayerStats, board: Board, isMe: Boolean) {
     }
 }
 
+/** Проверка, что имя не занято другим игроком. null — можно, иначе текст ошибки. */
+suspend fun checkNameFree(store: ProgressStore, name: String): String? {
+    if (!Leaderboard.enabled) return null
+    val players = Leaderboard.fetch().getOrNull() ?: return null
+    val taken = players.any { it.id != store.playerId && it.name.trim().equals(name.trim(), ignoreCase = true) }
+    return if (taken) "Имя «${name.trim()}» уже занято в рейтинге. Добавь фамилию, цифру или придумай другое." else null
+}
+
 /** Экран ввода имени при первом запуске. */
 @Composable
-fun NamePicker(initial: String, onDone: (String) -> Unit) {
+fun NamePicker(initial: String, store: ProgressStore, onDone: (String) -> Unit) {
     var name by remember { mutableStateOf(initial) }
+    var checking by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+
+    fun submit() {
+        val n = name.trim()
+        if (n.isEmpty() || checking) return
+        checking = true
+        error = null
+        scope.launch {
+            val e = checkNameFree(store, n)
+            checking = false
+            if (e == null) onDone(n) else error = e
+        }
+    }
+
     Column(
         Modifier
             .fillMaxSize()
@@ -201,12 +225,31 @@ fun NamePicker(initial: String, onDone: (String) -> Unit) {
         Hint("Имя увидят другие в общем рейтинге. Без паролей и регистрации — только имя. Поменять можно в ⚙️ настройках.")
         ClearableField(
             value = name,
-            onValue = { if (it.length <= 24) name = it },
+            onValue = { if (it.length <= 24) { name = it; error = null } },
             placeholder = "Например, Лёша",
-            onDone = { if (name.isNotBlank()) onDone(name.trim()) },
+            onDone = { submit() },
             modifier = Modifier.fillMaxWidth()
         )
-        GradientButton("Продолжить", { onDone(name.trim()) }, Modifier.fillMaxWidth(), enabled = name.isNotBlank())
+        error?.let { Text(it, color = Bad, style = MaterialTheme.typography.bodyMedium) }
+        GradientButton(if (checking) "Проверяю имя…" else "Продолжить", { submit() }, Modifier.fillMaxWidth(), enabled = name.isNotBlank() && !checking)
+    }
+}
+
+/** Новое устройство с чужим прогрессом: продолжить или начать с нуля. */
+@Composable
+fun WhoIsHere(name: String, onContinue: () -> Unit, onNew: () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Spacer(Modifier.height(24.dp))
+        IconTile("👤", Grads.Hero, 72.dp)
+        Text("Кто занимается?", style = MaterialTheme.typography.headlineMedium)
+        Hint("На этом устройстве уже есть прогресс пользователя «$name». Если это не ты — начни как новый пользователь: прогресс и уроки будут с нуля, а «$name» останется в ⚙️ настройках.")
+        GradientButton("Продолжить как «$name»", onContinue, Modifier.fillMaxWidth())
+        SoftButton("Я новый пользователь — начать с нуля", onNew, Modifier.fillMaxWidth())
     }
 }
 

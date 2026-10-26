@@ -93,6 +93,7 @@ fun SettingsScreen(store: ProgressStore, onLevel: () -> Unit, onExit: () -> Unit
     ) {
         TopBar("⚙️ Настройки", onExit)
         var nameEdit by remember { mutableStateOf(store.playerName) }
+        var nameError by remember { mutableStateOf<String?>(null) }
         Text("Имя в рейтинге", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(6.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -105,11 +106,48 @@ fun SettingsScreen(store: ProgressStore, onLevel: () -> Unit, onExit: () -> Unit
             Spacer(Modifier.width(8.dp))
             GradientButton("OK", {
                 if (nameEdit.isNotBlank()) {
-                    store.playerName = nameEdit
-                    scope.launch { Leaderboard.upload(store, force = true) }
+                    scope.launch {
+                        val e = checkNameFree(store, nameEdit)
+                        if (e != null) {
+                            nameError = e
+                        } else {
+                            nameError = null
+                            store.playerName = nameEdit
+                            Leaderboard.upload(store, force = true)
+                        }
+                    }
                 }
             }, Modifier.width(80.dp), enabled = nameEdit.isNotBlank() && nameEdit.trim() != store.playerName)
         }
+        nameError?.let { Text(it, color = Bad, style = MaterialTheme.typography.bodyMedium) }
+        Spacer(Modifier.height(18.dp))
+
+        // Пользователи на этом устройстве
+        val activity = LocalContext.current as android.app.Activity
+        val profiles = remember { Profiles.all(activity) }
+        val currentProfile = remember { Profiles.current(activity) }
+        Text("Пользователи на этом устройстве", style = MaterialTheme.typography.titleLarge)
+        Hint("У каждого свой прогресс, уроки и место в рейтинге.")
+        Spacer(Modifier.height(6.dp))
+        profiles.forEach { file ->
+            val pName = Profiles.nameOf(activity, file).ifBlank { "без имени" }
+            val isCurrent = file == currentProfile
+            SoftCard(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                onClick = { if (!isCurrent) Profiles.switchTo(activity, file) }
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconTile("👤", if (isCurrent) Grads.Roleplay else Grads.Book, 40.dp)
+                    Spacer(Modifier.width(12.dp))
+                    Text(pName, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                    Text(if (isCurrent) "✓ сейчас" else "переключиться ›", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        SoftButton("＋ Новый пользователь (с нуля)", { Profiles.createAndSwitch(activity) }, Modifier.fillMaxWidth(), height = 48.dp)
         Spacer(Modifier.height(18.dp))
         val lvl = store.level ?: Level.BEGINNER
         SoftCard(Modifier.fillMaxWidth(), onClick = onLevel) {

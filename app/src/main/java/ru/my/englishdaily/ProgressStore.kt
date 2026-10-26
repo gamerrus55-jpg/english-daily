@@ -14,7 +14,7 @@ import java.time.LocalDate
  */
 class ProgressStore(context: Context) {
 
-    private val prefs = context.getSharedPreferences("progress", Context.MODE_PRIVATE)
+    private val prefs = context.getSharedPreferences(Profiles.current(context), Context.MODE_PRIVATE)
     private val intervalDays = longArrayOf(0, 1, 3, 7, 16, 35)
     private val dayMs = 24L * 60 * 60 * 1000
 

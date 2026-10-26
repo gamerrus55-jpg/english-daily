@@ -19,7 +19,8 @@ class MainActivity : ComponentActivity() {
         speaker = Speaker(this)
         store = ProgressStore(this)
         store.initFirstBuild(BuildConfig.VERSION_CODE)
-        setContent { App(speaker, store) }
+        val newDevice = Profiles.checkNewDevice(this)
+        setContent { App(speaker, store, askWho = newDevice) }
     }
 
     override fun onDestroy() {
