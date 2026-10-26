@@ -23,6 +23,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private val GrammarGrad get() = Grads.Build
 private val SoundGrad get() = Grads.Repeat
@@ -188,6 +189,10 @@ private fun GrammarPractice(lesson: GrammarLesson, speaker: Speaker, store: Prog
     var saved by remember { mutableStateOf(false) }
     val recognizer = rememberRecognizer()
     val grad = GrammarGrad
+    val scope = rememberCoroutineScope()
+    var judging by remember(index) { mutableStateOf(false) }
+    var aiComment by remember(index) { mutableStateOf<String?>(null) }
+    var selfAccepted by remember(index) { mutableStateOf(false) }
 
     DisposableEffect(Unit) { onDispose { recognizer.cancel() } }
 
@@ -235,12 +240,30 @@ private fun GrammarPractice(lesson: GrammarLesson, speaker: Speaker, store: Prog
                 .replace("  ", " ").replace(" '", "'")
         }
 
-        fun check() {
-            if (verdict != null || answer.isBlank()) return
-            val ok = Grammar.accepts(answer, expected)
+        fun finish(ok: Boolean, comment: String? = null) {
             verdict = ok
+            aiComment = comment
             if (ok) correct++
-            speaker.say(Grammar.firstAnswer(expected))
+            speaker.say(if (ok) answer else Grammar.firstAnswer(expected))
+        }
+
+        fun check() {
+            if (verdict != null || answer.isBlank() || judging) return
+            // 1) Совпало с одним из образцов
+            if (Grammar.accepts(answer, expected)) return finish(true)
+            // 2) Проверка по смыслу через ИИ — правильных вариантов может быть много
+            if (store.aiReady) {
+                judging = true
+                scope.launch {
+                    val r = AnswerJudge.judge(store, task, expected, answer)
+                    judging = false
+                    r.onSuccess { (ok, comment) -> finish(ok, comment) }
+                        .onFailure { finish(AnswerJudge.closeEnough(answer, expected)) }
+                }
+                return
+            }
+            // 3) Без ИИ — засчитываем, если ответ почти совпадает
+            finish(AnswerJudge.closeEnough(answer, expected))
         }
 
         Column(
@@ -326,14 +349,36 @@ private fun GrammarPractice(lesson: GrammarLesson, speaker: Speaker, store: Prog
             val v = verdict
             if (v != null) {
                 Spacer(Modifier.height(12.dp))
-                ResultBanner(v, if (v) "Верно! 🎉" else "Правильно так:") {
+                ResultBanner(v, when {
+                    selfAccepted -> "Засчитано ✋"
+                    v && !Grammar.accepts(answer, expected) -> "Засчитано — твой вариант тоже верный 🎉"
+                    v -> "Верно! 🎉"
+                    else -> "Не совсем. Образец:"
+                }) {
+                    aiComment?.takeIf { it.isNotBlank() }?.let {
+                        Spacer(Modifier.height(4.dp))
+                        Text("🤖 $it", style = MaterialTheme.typography.bodyMedium)
+                    }
                     Spacer(Modifier.height(4.dp))
+                    if (v && !Grammar.accepts(answer, expected)) Hint("Вариант из урока:")
                     Text(Grammar.firstAnswer(expected), style = MaterialTheme.typography.titleLarge)
                     val others = expected.split("|").drop(1).map { it.trim() }.filter { it.isNotEmpty() }
                     if (others.isNotEmpty()) Hint("Тоже верно: " + others.joinToString(" / "))
                     Spacer(Modifier.height(8.dp))
                     SpeakRow(Grammar.firstAnswer(expected), speaker)
+                    if (!v && task !is Task.Choice && answer.isNotBlank()) {
+                        Spacer(Modifier.height(10.dp))
+                        Pill("✋ Мой ответ тоже верный — засчитать", {
+                            verdict = true
+                            selfAccepted = true
+                            correct++
+                        })
+                    }
                 }
+            }
+            if (judging) {
+                Spacer(Modifier.height(12.dp))
+                Hint("🤖 Проверяю твой вариант по смыслу…", center = true)
             }
         }
 
@@ -534,6 +579,46 @@ private fun SoundTest(topic: SoundTopic, speaker: Speaker, store: ProgressStore,
             Spacer(Modifier.weight(1f))
             GradientButton("Дальше", { index++ }, Modifier.fillMaxWidth(), grad = grad)
         }
+        }
+    }
+}
+
+
+/** Проверка свободного ответа: ИИ оценивает смысл и грамматику, а не дословное совпадение. */
+object AnswerJudge {
+    private val system = """
+You check answers of a Russian-speaking English learner in a grammar exercise.
+Many different answers can be correct. Accept the student's answer if it is grammatically correct, natural,
+fulfils the task and keeps the meaning — even if the wording differs from the reference answers.
+Small typos that don't change the word are OK. Reject only real grammar mistakes, wrong meaning, or if the task was not done
+(for example, the task asked for a question or a specific tense and the student didn't use it).
+Answer in EXACTLY this format:
+OK: yes or no
+COMMENT: one short sentence in Russian — if yes, optionally a tip; if no, what exactly is wrong
+""".trimIndent()
+
+    suspend fun judge(store: ProgressStore, task: Task, expected: String, answer: String): Result<Pair<Boolean, String>> {
+        val taskText = when (task) {
+            is Task.Transform -> "Task: ${task.task}\nSentence: ${task.from}"
+            is Task.Translate -> "Task: translate into English\nRussian: ${task.ru}"
+            is Task.Choice -> "Task: fill the gap\nSentence: ${task.sentence}"
+        }
+        val prompt = "$taskText\nReference answers: ${expected.split("|").joinToString(" / ") { it.trim() }}\nStudent's answer: $answer"
+        return Ai.ask(store, system, listOf(Ai.Msg("user", prompt)), maxTokens = 150).map { text ->
+            val names = listOf("OK", "COMMENT")
+            val ok = Ai.field(text, "OK", names).lowercase().startsWith("y")
+            ok to Ai.field(text, "COMMENT", names)
+        }
+    }
+
+    /** Без ИИ: почти дословное совпадение (одно-два слова отличаются). */
+    fun closeEnough(answer: String, expected: String): Boolean {
+        val a = canonWords(answer)
+        if (a.isEmpty()) return false
+        return expected.split("|").any { variant ->
+            val e = canonWords(variant.trim())
+            val common = e.count { it in a }
+            e.isNotEmpty() && common >= e.size - 1 && a.size <= e.size + 2 && e.size >= 3
         }
     }
 }
