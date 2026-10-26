@@ -15,6 +15,9 @@ android {
         // Номер сборки растёт с каждой сборкой на GitHub, чтобы APK ставился поверх старого
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
         versionName = "1.0." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
+        // Общий рейтинг: ключ подставляется при сборке на GitHub и даёт доступ только к репозиторию статистики
+        buildConfigField("String", "STATS_TOKEN", "\"" + (System.getenv("STATS_TOKEN") ?: "") + "\"")
+        buildConfigField("String", "STATS_REPO", "\"gamerrus55-jpg/english-daily-stats\"")
     }
 
     // Постоянный ключ подписи: обновления ставятся поверх, прогресс не теряется

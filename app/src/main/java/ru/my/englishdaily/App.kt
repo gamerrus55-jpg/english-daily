@@ -40,6 +40,7 @@ sealed interface Screen {
     data object LevelPick : Screen
     data class GameView(val game: Game, val deck: Deck) : Screen
     data object WhatsNewList : Screen
+    data object Rating : Screen
 }
 
 /** Хранилище прогресса — доступно любому экрану. */
@@ -53,6 +54,7 @@ fun App(speaker: Speaker, store: ProgressStore) {
             var screen by remember { mutableStateOf<Screen>(Screen.Home) }
             var latestBuild by remember { mutableStateOf<Int?>(null) }
             var level by remember { mutableStateOf(store.level) }
+            var playerName by remember { mutableStateOf(store.playerName) }
             var deck by remember {
                 val lvl = store.level ?: Level.BEGINNER
                 mutableStateOf(store.deck?.takeIf { it in Deck.forLevel(lvl) } ?: Deck.forLevel(lvl).first())
@@ -96,7 +98,12 @@ fun App(speaker: Speaker, store: ProgressStore) {
                     .safeDrawingPadding()
                     .padding(horizontal = 18.dp, vertical = 12.dp)
             ) {
-                if (level == null) {
+                if (playerName.isBlank()) {
+                    NamePicker("") { name ->
+                        store.playerName = name
+                        playerName = name
+                    }
+                } else if (level == null) {
                     LevelPicker(null) { picked ->
                         applyLevel(picked)
                         chooseDeck(Deck.forLevel(picked).first())
@@ -220,6 +227,11 @@ fun App(speaker: Speaker, store: ProgressStore) {
                         val back = { screen = Screen.SoundList }
                         BackHandler(onBack = back)
                         SoundTopicScreen(s.topic, speaker, store, onExit = back)
+                    }
+
+                    Screen.Rating -> {
+                        BackHandler(onBack = goHome)
+                        LeaderboardScreen(store, onSettings = { screen = Screen.Settings }, onExit = goHome)
                     }
 
                     Screen.WhatsNewList -> {

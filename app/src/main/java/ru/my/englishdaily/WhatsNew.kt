@@ -32,6 +32,7 @@ data class Feature(
 
 object WhatsNew {
     val all: List<Feature> = listOf(
+        Feature("rating", 11, "🏆", "Общий рейтинг", "Вводишь имя — и видишь себя и других: опыт, активность за неделю, серия дней, выучено карточек."),
         Feature("usage", 10, "📝", "Слова в контексте", "У каждого слова — фразы с пометкой, где так говорят: в разговоре, на работе, в магазине, в суде. Кнопка «🤖 Ещё примеры»."),
         Feature("multi", 10, "🔀", "Одно слово — разные смыслы", "Новая колода: case, charge, fine, bill, claim… в быту, на работе и в юридическом языке."),
         Feature("dialog_levels", 9, "🎬", "Диалоги по уровням A1–C1", "Простые разговорники, средние, продвинутые и уровень «как в жизни». Фильтр по уровню вверху списка."),
@@ -107,6 +108,7 @@ fun featureTarget(key: String): Screen? = when (key) {
     "dialog_levels", "live_dialogs" -> Screen.DialogList(false)
     "roleplay_levels" -> Screen.DialogList(true)
     "tenses" -> Screen.GrammarList
+    "rating" -> Screen.Rating
     else -> null
 }
 

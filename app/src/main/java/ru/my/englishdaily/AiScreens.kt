@@ -92,6 +92,25 @@ fun SettingsScreen(store: ProgressStore, onLevel: () -> Unit, onExit: () -> Unit
             .verticalScroll(rememberScrollState())
     ) {
         TopBar("⚙️ Настройки", onExit)
+        var nameEdit by remember { mutableStateOf(store.playerName) }
+        Text("Имя в рейтинге", style = MaterialTheme.typography.titleLarge)
+        Spacer(Modifier.height(6.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ClearableField(
+                value = nameEdit,
+                onValue = { if (it.length <= 24) nameEdit = it },
+                placeholder = "Твоё имя",
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(Modifier.width(8.dp))
+            GradientButton("OK", {
+                if (nameEdit.isNotBlank()) {
+                    store.playerName = nameEdit
+                    scope.launch { Leaderboard.upload(store, force = true) }
+                }
+            }, Modifier.width(80.dp), enabled = nameEdit.isNotBlank() && nameEdit.trim() != store.playerName)
+        }
+        Spacer(Modifier.height(18.dp))
         val lvl = store.level ?: Level.BEGINNER
         SoftCard(Modifier.fillMaxWidth(), onClick = onLevel) {
             Row(verticalAlignment = Alignment.CenterVertically) {

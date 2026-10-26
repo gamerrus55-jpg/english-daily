@@ -78,6 +78,9 @@ fun HomeScreen(
             CircleButton("⚙️") { onOpen(Screen.Settings) }
         }
 
+        // Тихо отправляем свою статистику в общий рейтинг
+        LaunchedEffect(Unit) { Leaderboard.upload(store) }
+
         val freshCount = WhatsNew.unseen(store).size
         if (freshCount > 0) {
             SoftCard(Modifier.fillMaxWidth(), onClick = { onOpen(Screen.WhatsNewList) }) {
@@ -90,6 +93,24 @@ fun HomeScreen(
                     }
                     NewBadge()
                 }
+            }
+        }
+
+        SoftCard(Modifier.fillMaxWidth(), onClick = { WhatsNew.markSeen(store, "rating"); onOpen(Screen.Rating) }) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconTile("🏆", Grads.Recall, 44.dp)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Рейтинг", style = MaterialTheme.typography.titleMedium)
+                        if (WhatsNew.isNew(store, "rating")) {
+                            Spacer(Modifier.width(6.dp))
+                            NewBadge()
+                        }
+                    }
+                    Hint("${store.playerName}, сравни свой прогресс с остальными")
+                }
+                Text("›", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 

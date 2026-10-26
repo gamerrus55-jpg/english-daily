@@ -110,6 +110,25 @@ class ProgressStore(context: Context) {
         bump("stories", xp = 30)
     }
 
+    // ---------- Игрок для общего рейтинга ----------
+
+    val playerId: String
+        get() = prefs.getString("_player_id", null) ?: java.util.UUID.randomUUID().toString().also {
+            prefs.edit().putString("_player_id", it).apply()
+        }
+
+    var playerName: String
+        get() = prefs.getString("_player_name", "").orEmpty()
+        set(value) = prefs.edit().putString("_player_name", value.trim()).apply()
+
+    var lastUpload: Long
+        get() = prefs.getLong("_last_upload", 0)
+        set(value) = prefs.edit().putLong("_last_upload", value).apply()
+
+    var statsSha: String
+        get() = prefs.getString("_stats_sha", "").orEmpty()
+        set(value) = prefs.edit().putString("_stats_sha", value).apply()
+
     // ---------- Что нового ----------
 
     /** Сборка, с которой человек начал пользоваться приложением (новинки показываем только новее неё). */

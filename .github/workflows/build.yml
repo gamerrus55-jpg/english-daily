@@ -45,6 +45,8 @@ jobs:
           ls -la app/src/main/assets
 
       - name: Build
+        env:
+          STATS_TOKEN: ${{ secrets.STATS_TOKEN }}
         run: gradle assembleDebug --no-daemon --stacktrace
 
       - name: Rename APK
