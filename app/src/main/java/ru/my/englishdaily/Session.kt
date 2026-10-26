@@ -87,7 +87,16 @@ fun SessionScreen(s: Screen.Session, speaker: Speaker, store: ProgressStore, onE
                 val next: () -> Unit = { index++ }
                 val answer: (Boolean) -> Unit = { ok -> onResult(item, ok) }
                 when (s.mode) {
-                    Mode.RECALL -> RecallCard(item, speaker, s.mode.grad) { ok -> answer(ok); next() }
+                    Mode.RECALL -> RecallCard(
+                        item, speaker, s.mode.grad,
+                        onDone = { ok -> answer(ok); next() },
+                        onKnown = {
+                            store.markKnown(item.id)
+                            answered++
+                            correct++
+                            next()
+                        }
+                    )
                     Mode.BUILD -> BuildCard(item, speaker, s.mode.grad, answer, next)
                     Mode.LISTEN -> ListenCard(item, s.deck.items, speaker, s.mode.grad, answer, next)
                     Mode.DICTATION -> DictationCard(item, speaker, s.mode.grad, answer, next)
@@ -143,7 +152,7 @@ private fun PromptCard(label: String, text: String, sub: String? = null) {
 // ---------- ⚡ Вспомни быстро ----------
 
 @Composable
-private fun RecallCard(item: Item, speaker: Speaker, grad: Grad, onDone: (Boolean) -> Unit) {
+private fun RecallCard(item: Item, speaker: Speaker, grad: Grad, onDone: (Boolean) -> Unit, onKnown: () -> Unit) {
     val totalMs = ((3000L + 600L * item.en.split(" ").size) * CurrentLevel.timerFactor).toLong()
     var revealed by remember { mutableStateOf(false) }
     var done by remember { mutableStateOf(false) }
@@ -180,12 +189,16 @@ private fun RecallCard(item: Item, speaker: Speaker, grad: Grad, onDone: (Boolea
             Spacer(Modifier.height(10.dp))
             Hint("Скажи вслух, потом проверь себя", center = true)
             Spacer(Modifier.weight(1f))
+            KnownButton { if (!done) { done = true; onKnown() } }
+            Spacer(Modifier.height(10.dp))
             GradientButton("Показать ответ", { revealed = true }, Modifier.fillMaxWidth(), grad = grad)
         } else {
             BigText(item.en, color = grad.a)
             Spacer(Modifier.height(14.dp))
             Box(Modifier.align(Alignment.CenterHorizontally)) { SpeakRow(item.en, speaker) }
             Spacer(Modifier.weight(1f))
+            KnownButton { if (!done) { done = true; onKnown() } }
+            Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 SoftButton("Не вспомнил", { finish(false) }, Modifier.weight(1f))
                 GradientButton("Вспомнил", { finish(true) }, Modifier.weight(1f), grad = grad)
@@ -546,5 +559,13 @@ private fun SpeakCard(
             Spacer(Modifier.height(8.dp))
             Hint("Можно нажать на микрофон и попробовать ещё раз", center = true)
         }
+    }
+}
+
+/** «Уже знаю» — убрать слишком лёгкую карточку из повторений. */
+@Composable
+private fun KnownButton(onClick: () -> Unit) {
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Pill("✓ Уже знаю — больше не показывать", onClick)
     }
 }

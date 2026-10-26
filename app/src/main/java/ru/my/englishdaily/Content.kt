@@ -2,12 +2,16 @@ package ru.my.englishdaily
 
 data class Item(val id: String, val en: String, val ru: String, val group: String = "")
 
-enum class Deck(val title: String) {
+enum class Deck(val title: String, val singleWords: Boolean = false) {
     COURSE("Курс"),
     PHRASES("Фразы"),
-    WORDS("Слова"),
+    WORDS("Слова", singleWords = true),
     SLANG("Живая речь"),
     DIALOGS("Из диалогов"),
+    B1_WORDS("Слова B1", singleWords = true),
+    B2_WORDS("Слова B2–C1", singleWords = true),
+    ADV_PHRASES("Фразы B2+"),
+    PHRASAL("Фразовые глаголы"),
     IDIOMS("Идиомы"),
     MINE("⭐ Мои слова");
 
@@ -18,9 +22,25 @@ enum class Deck(val title: String) {
             WORDS -> Content.words
             SLANG -> Slang.items
             DIALOGS -> Dialogues.items
+            B1_WORDS -> Vocab.b1
+            B2_WORDS -> Vocab.b2
+            ADV_PHRASES -> Vocab.phrases
+            PHRASAL -> Vocab.phrasal
             IDIOMS -> Idioms.items
             MINE -> MyWords.items
         }
+
+    /** Курс проходится строго по порядку, остальные колоды — вперемешку. */
+    val ordered: Boolean get() = this == COURSE
+
+    companion object {
+        /** Колоды под уровень: сначала подходящие, слишком простые для продвинутых скрыты. */
+        fun forLevel(level: Level): List<Deck> = when (level) {
+            Level.BEGINNER -> listOf(COURSE, PHRASES, WORDS, SLANG, DIALOGS, B1_WORDS, MINE)
+            Level.INTERMEDIATE -> listOf(B1_WORDS, PHRASAL, SLANG, DIALOGS, IDIOMS, ADV_PHRASES, COURSE, PHRASES, MINE)
+            Level.ADVANCED -> listOf(B2_WORDS, ADV_PHRASES, PHRASAL, IDIOMS, DIALOGS, SLANG, B1_WORDS, MINE)
+        }
+    }
 }
 
 /** Стартовый набор. Чтобы добавить своё — допиши строку "english" to "русский". */

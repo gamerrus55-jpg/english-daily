@@ -45,9 +45,33 @@ fun App(speaker: Speaker, store: ProgressStore) {
     AppTheme {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             var screen by remember { mutableStateOf<Screen>(Screen.Home) }
-            var deck by remember { mutableStateOf(Deck.COURSE) }
             var latestBuild by remember { mutableStateOf<Int?>(null) }
             var level by remember { mutableStateOf(store.level) }
+            var deck by remember {
+                val lvl = store.level ?: Level.BEGINNER
+                mutableStateOf(store.deck?.takeIf { it in Deck.forLevel(lvl) } ?: Deck.forLevel(lvl).first())
+            }
+
+            fun chooseDeck(d: Deck) {
+                deck = d
+                store.deck = d
+            }
+
+            fun applyLevel(picked: Level) {
+                store.level = picked
+                level = picked
+                if (deck !in Deck.forLevel(picked)) chooseDeck(Deck.forLevel(picked).first())
+            }
+
+            /** Набор карточек под уровень: продвинутым больше новых и меньше повторов. */
+            fun session(d: Deck, size: Int): List<Item> {
+                val (maxNew, dueCap) = when (level ?: Level.BEGINNER) {
+                    Level.BEGINNER -> 8 to size
+                    Level.INTERMEDIATE -> 10 to size * 2 / 3
+                    Level.ADVANCED -> size to size / 2
+                }
+                return store.buildSession(d.items, size, maxNew, ordered = d.ordered, dueCap = dueCap)
+            }
 
             // Уровень влияет на скорость речи, таймеры и колоду по умолчанию
             LaunchedEffect(level) {
@@ -68,9 +92,8 @@ fun App(speaker: Speaker, store: ProgressStore) {
             ) {
                 if (level == null) {
                     LevelPicker(null) { picked ->
-                        store.level = picked
-                        level = picked
-                        if (picked == Level.ADVANCED) deck = Deck.IDIOMS
+                        applyLevel(picked)
+                        chooseDeck(Deck.forLevel(picked).first())
                     }
                 } else when (val s = screen) {
                     Screen.Home -> HomeScreen(
@@ -79,13 +102,16 @@ fun App(speaker: Speaker, store: ProgressStore) {
                         deck = deck,
                         latestBuild = latestBuild,
                         onLatestBuild = { latestBuild = it },
-                        onDeck = { deck = it },
+                        onDeck = { chooseDeck(it) },
                         onStart = { mode ->
-                            val d = if (mode == Mode.BUILD && deck == Deck.WORDS) Deck.COURSE else deck
+                            // Из отдельных слов фразу не собрать — берём фразы своего уровня
+                            val d = if (mode == Mode.BUILD && deck.singleWords) {
+                                if (level == Level.BEGINNER) Deck.COURSE else Deck.ADV_PHRASES
+                            } else deck
                             screen = if (mode == Mode.AUDIO) {
-                                Screen.Audio(d, store.buildSession(d.items, size = 20))
+                                Screen.Audio(d, session(d, 20))
                             } else {
-                                Screen.Session(mode, d, store.buildSession(d.items, size = if (mode == Mode.SPEAK || mode == Mode.REPEAT) 10 else 15))
+                                Screen.Session(mode, d, session(d, if (mode == Mode.SPEAK || mode == Mode.REPEAT) 10 else 15))
                             }
                         },
                         onBrowse = { screen = Screen.Browse(deck) },
@@ -162,8 +188,8 @@ fun App(speaker: Speaker, store: ProgressStore) {
                     Screen.LevelPick -> {
                         BackHandler(onBack = { screen = Screen.Settings })
                         LevelPicker(level) { picked ->
-                            store.level = picked
-                            level = picked
+                            applyLevel(picked)
+                            chooseDeck(Deck.forLevel(picked).first())
                             screen = Screen.Home
                         }
                     }

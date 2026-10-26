@@ -158,7 +158,7 @@ fun HomeScreen(
             Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Deck.entries.forEach { d -> Pill(d.title, { onDeck(d) }, selected = d == deck) }
+            Deck.forLevel(store.level ?: Level.BEGINNER).forEach { d -> Pill(d.title, { onDeck(d) }, selected = d == deck) }
         }
 
         SectionTitle("Этап 1 · Говорю фразами", "Строй фразы быстро и без запинок")
@@ -352,7 +352,7 @@ private fun ModeGrid(modes: List<Mode>, deck: Deck, onStart: (Mode) -> Unit) {
         modes.chunked(2).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 row.forEach { mode ->
-                    val note = if (mode == Mode.BUILD && deck == Deck.WORDS) " (из курса)" else ""
+                    val note = if (mode == Mode.BUILD && deck.singleWords) " (фразы)" else ""
                     SoftCard(
                         Modifier
                             .weight(1f)

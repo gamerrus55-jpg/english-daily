@@ -27,6 +27,13 @@ class ProgressStore(context: Context) {
 
     fun dueAt(id: String): Long = raw(id)?.substringAfter('|')?.toLongOrNull() ?: 0L
 
+    /** «Уже знаю» — карточка уходит в последнюю коробку и не появится полгода. */
+    fun markKnown(id: String) {
+        val due = System.currentTimeMillis() + 180 * dayMs
+        prefs.edit().putString(id, "5|$due").apply()
+        activity(5)
+    }
+
     fun answer(id: String, correct: Boolean) {
         val newBox = if (correct) (box(id) + 1).coerceIn(1, 5) else 0
         val now = System.currentTimeMillis()
@@ -36,15 +43,25 @@ class ProgressStore(context: Context) {
     }
 
     /** Набор на одно занятие: сначала то, что пора повторить, потом немного новых. */
-    fun buildSession(items: List<Item>, size: Int = 15, maxNew: Int = 8): List<Item> {
+    fun buildSession(
+        items: List<Item>,
+        size: Int = 15,
+        maxNew: Int = 8,
+        ordered: Boolean = true,
+        dueCap: Int = size,
+    ): List<Item> {
         val now = System.currentTimeMillis()
-        val due = items
+        val allDue = items
             .filter { !isNew(it.id) && dueAt(it.id) <= now }
             .sortedBy { dueAt(it.id) }
-            .take(size)
+        // Повторения занимают не больше dueCap мест — новые слова появляются сразу
+        val due = allDue.take(minOf(size, dueCap))
         val newCount = (size - due.size).coerceIn(0, maxNew)
-        val fresh = items.filter { isNew(it.id) }.take(newCount)
-        val session = due + fresh
+        val freshAll = items.filter { isNew(it.id) }
+        val fresh = if (ordered) freshAll.take(newCount) else freshAll.shuffled().take(newCount)
+        var session = due + fresh
+        // Новых не хватило — добираем оставшимися повторениями
+        if (session.size < size) session = session + allDue.drop(due.size).take(size - session.size)
         if (session.isNotEmpty()) return session.shuffled()
         // Всё выучено и повторять пока нечего — тренируем самые слабые
         return items.sortedBy { box(it.id) }.take(size).shuffled()
@@ -106,6 +123,12 @@ class ProgressStore(context: Context) {
         if (percent > soundBest(id)) prefs.edit().putInt("_snd_$id", percent).apply()
         bump("sounds", xp = 15)
     }
+
+    // ---------- Выбранная колода ----------
+
+    var deck: Deck?
+        get() = Deck.entries.firstOrNull { it.name == prefs.getString("_deck", null) }
+        set(value) = prefs.edit().putString("_deck", value?.name).apply()
 
     // ---------- Уровень сложности ----------
 
