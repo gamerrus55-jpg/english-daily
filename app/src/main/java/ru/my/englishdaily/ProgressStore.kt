@@ -110,6 +110,16 @@ class ProgressStore(context: Context) {
         bump("stories", xp = 30)
     }
 
+    /** Рекорды в играх. */
+    fun best(name: String): Int = prefs.getInt("_best_$name", 0)
+
+    fun saveBest(name: String, value: Int, lowerIsBetter: Boolean = false) {
+        val old = best(name)
+        val better = old == 0 || if (lowerIsBetter) value < old else value > old
+        if (better) prefs.edit().putInt("_best_$name", value).apply()
+        if (!lowerIsBetter) bump("games", xp = (value / 20).coerceIn(5, 40))
+    }
+
     fun grammarBest(id: String): Int = prefs.getInt("_gr_$id", -1)
 
     fun saveGrammarResult(id: String, percent: Int) {

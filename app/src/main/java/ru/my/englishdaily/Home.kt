@@ -160,6 +160,38 @@ fun HomeScreen(
         ) {
             Deck.forLevel(store.level ?: Level.BEGINNER).forEach { d -> Pill(d.title, { onDeck(d) }, selected = d == deck) }
         }
+        // Карточка выбранной колоды: видно, что выбрано, и можно сразу начать
+        SoftCard(Modifier.fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(deck.title, style = MaterialTheme.typography.titleLarge)
+                    Hint(Deck.describe(deck))
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            val learnedShare = if (stats.total == 0) 0f else stats.learned.toFloat() / stats.total
+            PillProgress(learnedShare, Modifier.fillMaxWidth(), Grads.Roleplay)
+            Spacer(Modifier.height(4.dp))
+            Hint("${stats.total} карточек · выучено ${stats.learned} · новых ${stats.fresh} · повторить ${stats.due}")
+            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                SoftButton("📖 Открыть", onBrowse, Modifier.weight(1f), height = 48.dp)
+                GradientButton("▶ Тренировать", { onStart(Mode.RECALL) }, Modifier.weight(1f).height(48.dp), grad = Grads.Recall)
+            }
+            Spacer(Modifier.height(6.dp))
+            Hint("Все режимы ниже тоже берут карточки из этой колоды.")
+        }
+
+        SectionTitle("🎮 Игры на скорость", "Быстро вспоминать слова — на время и на рекорд")
+        Game.entries.forEach { game ->
+            WideTile(
+                emoji = game.emoji,
+                title = game.title,
+                hint = game.hint + " · колода «${deck.title}»",
+                grad = game.grad,
+                onClick = { onOpen(Screen.GameView(game, deck)) }
+            )
+        }
 
         SectionTitle("Этап 1 · Говорю фразами", "Строй фразы быстро и без запинок")
         ModeGrid(listOf(Mode.RECALL, Mode.AUDIO, Mode.BUILD, Mode.SPEAK), deck, onStart)

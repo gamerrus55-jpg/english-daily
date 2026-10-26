@@ -36,7 +36,8 @@ fun MonologueScreen(store: ProgressStore, speaker: Speaker, onSettings: () -> Un
     var topic by remember { mutableStateOf(topics.random()) }
     var running by remember { mutableStateOf(false) }
     var left by remember { mutableIntStateOf(seconds) }
-    var transcript by remember { mutableStateOf("") }
+    val segments = remember { mutableStateListOf<String>() }
+    val transcript = segments.joinToString(" ")
     var feedback by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<String?>(null) }
@@ -56,7 +57,7 @@ fun MonologueScreen(store: ProgressStore, speaker: Speaker, onSettings: () -> Un
         recognizer.start(
             onHeard = { alts ->
                 val heard = alts.first()
-                transcript = (transcript + " " + heard.replaceFirstChar { it.uppercase() } + ".").trim()
+                segments.add(heard.replaceFirstChar { it.uppercase() } + ".")
                 if (running) scope.launch { delay(150); listen() }
             },
             onFail = {
@@ -105,7 +106,7 @@ fun MonologueScreen(store: ProgressStore, speaker: Speaker, onSettings: () -> Un
                 Pill("🎲 Другая тема", {
                     if (!running) {
                         topic = (topics - topic).random()
-                        transcript = ""
+                        segments.clear()
                         feedback = null
                         left = seconds
                     }
@@ -131,6 +132,11 @@ fun MonologueScreen(store: ProgressStore, speaker: Speaker, onSettings: () -> Un
                 Text("Твоя речь · $words слов", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(6.dp))
                 Text(transcript, style = MaterialTheme.typography.bodyLarge)
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Pill("⌫ Убрать последнюю фразу", { if (segments.isNotEmpty()) segments.removeAt(segments.lastIndex) })
+                    if (!running) Pill("🔊", { speaker.say(transcript) })
+                }
                 if (recognizer.state == Recognizer.State.LISTENING && recognizer.partial.isNotBlank()) {
                     Hint("«${recognizer.partial}»")
                 }
@@ -159,7 +165,7 @@ fun MonologueScreen(store: ProgressStore, speaker: Speaker, onSettings: () -> Un
             } else {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     SoftButton("Заново", {
-                        transcript = ""
+                        segments.clear()
                         feedback = null
                         left = seconds
                     }, Modifier.weight(1f))

@@ -8,6 +8,7 @@ enum class Deck(val title: String, val singleWords: Boolean = false) {
     WORDS("Слова", singleWords = true),
     SLANG("Живая речь"),
     DIALOGS("Из диалогов"),
+    COMPLEX("Сложные предложения"),
     B1_WORDS("Слова B1", singleWords = true),
     B2_WORDS("Слова B2–C1", singleWords = true),
     ADV_PHRASES("Фразы B2+"),
@@ -22,6 +23,7 @@ enum class Deck(val title: String, val singleWords: Boolean = false) {
             WORDS -> Content.words
             SLANG -> Slang.items
             DIALOGS -> Dialogues.items
+            COMPLEX -> Complex.items
             B1_WORDS -> Vocab.b1
             B2_WORDS -> Vocab.b2
             ADV_PHRASES -> Vocab.phrases
@@ -37,8 +39,24 @@ enum class Deck(val title: String, val singleWords: Boolean = false) {
         /** Колоды под уровень: сначала подходящие, слишком простые для продвинутых скрыты. */
         fun forLevel(level: Level): List<Deck> = when (level) {
             Level.BEGINNER -> listOf(COURSE, PHRASES, WORDS, SLANG, DIALOGS, B1_WORDS, MINE)
-            Level.INTERMEDIATE -> listOf(B1_WORDS, PHRASAL, SLANG, DIALOGS, IDIOMS, ADV_PHRASES, COURSE, PHRASES, MINE)
-            Level.ADVANCED -> listOf(B2_WORDS, ADV_PHRASES, PHRASAL, IDIOMS, DIALOGS, SLANG, B1_WORDS, MINE)
+            Level.INTERMEDIATE -> listOf(B1_WORDS, COMPLEX, PHRASAL, SLANG, DIALOGS, IDIOMS, ADV_PHRASES, COURSE, PHRASES, MINE)
+            Level.ADVANCED -> listOf(COMPLEX, B2_WORDS, ADV_PHRASES, PHRASAL, IDIOMS, DIALOGS, SLANG, B1_WORDS, MINE)
+        }
+
+        /** Пояснение к колоде — показываем, когда её выбирают. */
+        fun describe(d: Deck): String = when (d) {
+            COURSE -> "32 разговорные конструкции от «I want to…» до «I used to…», по порядку"
+            PHRASES -> "Бытовые фразы на каждый день"
+            WORDS -> "Самые нужные слова для начала"
+            SLANG -> "gonna, wanna, gotta и живые разговорные фразы"
+            DIALOGS -> "Реплики из всех диалогов"
+            COMPLEX -> "Длинные предложения с разными временами: Past Perfect, Future Perfect, условия, I wish, should have…"
+            B1_WORDS -> "Слова среднего уровня: achieve, afford, reliable, eventually…"
+            B2_WORDS -> "Продвинутая лексика: acknowledge, resilience, meticulous, arguably…"
+            ADV_PHRASES -> "Фразы для спора, мнения и вежливой беседы"
+            PHRASAL -> "Фразовые глаголы в живых предложениях"
+            IDIOMS -> "Идиомы и устойчивые выражения"
+            MINE -> "Твои слова из историй, сериалов и разговорника"
         }
     }
 }

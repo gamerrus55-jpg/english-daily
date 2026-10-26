@@ -375,3 +375,54 @@ fun Hint(text: String, center: Boolean = false) {
         modifier = if (center) Modifier.fillMaxWidth() else Modifier
     )
 }
+
+/** Поле ввода с кнопкой «✕ очистить» — удобно, если распознавание ошиблось. */
+@Composable
+fun ClearableField(
+    value: String,
+    onValue: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    minLines: Int = 1,
+    maxLines: Int = 3,
+    onDone: (() -> Unit)? = null,
+) {
+    androidx.compose.material3.OutlinedTextField(
+        value = value,
+        onValueChange = onValue,
+        placeholder = { Text(placeholder) },
+        shape = RoundedCornerShape(20.dp),
+        enabled = enabled,
+        minLines = minLines,
+        maxLines = maxLines,
+        textStyle = MaterialTheme.typography.titleMedium,
+        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+            capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Sentences,
+            imeAction = if (onDone != null) androidx.compose.ui.text.input.ImeAction.Done else androidx.compose.ui.text.input.ImeAction.Default
+        ),
+        keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { onDone?.invoke() }),
+        trailingIcon = if (value.isNotEmpty() && enabled) {
+            {
+                Box(
+                    Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { onValue("") },
+                    contentAlignment = Alignment.Center
+                ) { Text("✕", style = MaterialTheme.typography.titleMedium) }
+            }
+        } else null,
+        modifier = modifier
+    )
+}
+
+/** Убирает последнее предложение — если микрофон добавил ерунду. */
+fun dropLastSentence(text: String): String {
+    val t = text.trimEnd()
+    if (t.isEmpty()) return ""
+    val body = t.trimEnd('.', '!', '?')
+    val cut = maxOf(body.lastIndexOf(". "), body.lastIndexOf("! "), body.lastIndexOf("? "))
+    return if (cut < 0) "" else t.substring(0, cut + 1)
+}

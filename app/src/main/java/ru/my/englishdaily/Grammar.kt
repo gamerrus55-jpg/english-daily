@@ -41,7 +41,10 @@ private const val NEG = "Сделай отрицание"
 private const val Q = "Задай общий вопрос"
 
 object Grammar {
-    val all: List<GrammarLesson> = listOf(
+    /** Все уроки: базовые + сложные времена. */
+    val all: List<GrammarLesson> by lazy { basic + TenseLessons.lessons }
+
+    private val basic: List<GrammarLesson> = listOf(
         GrammarLesson(
             "be", "🧱", "Глагол to be: am, is, are", 1,
             "В русском мы говорим «Я врач», «Он дома» — без глагола. В английском так нельзя: нужен глагол to be («быть»). " +

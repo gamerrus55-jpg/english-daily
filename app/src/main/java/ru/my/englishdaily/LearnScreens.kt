@@ -158,15 +158,12 @@ private fun AnswerInput(
     onError: (String) -> Unit,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
+        ClearableField(
             value = value,
-            onValueChange = { if (enabled) onValue(it) },
-            placeholder = { Text("Напиши или нажми 🎙") },
-            shape = RoundedCornerShape(20.dp),
+            onValue = { if (enabled) onValue(it) },
+            placeholder = "Напиши или нажми 🎙",
             enabled = enabled,
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { onSubmit() }),
-            textStyle = MaterialTheme.typography.titleMedium,
+            onDone = onSubmit,
             modifier = Modifier.weight(1f)
         )
         if (enabled) {

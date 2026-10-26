@@ -410,19 +410,13 @@ private fun DictationCard(item: Item, speaker: Speaker, grad: Grad, onAnswer: (B
             Box(Modifier.align(Alignment.CenterHorizontally)) { SpeakRow(item.en, speaker) }
         }
         Spacer(Modifier.height(16.dp))
-        OutlinedTextField(
+        ClearableField(
             value = text,
-            onValueChange = { if (result == null) text = it },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(18.dp),
-            placeholder = { Text("Пиши то, что слышишь") },
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.Sentences,
-                keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(onDone = { if (text.isNotBlank()) check() }),
-            textStyle = MaterialTheme.typography.titleMedium
+            onValue = { if (result == null) text = it },
+            placeholder = "Пиши то, что слышишь",
+            enabled = result == null,
+            onDone = { if (text.isNotBlank()) check() },
+            modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.height(16.dp))
 

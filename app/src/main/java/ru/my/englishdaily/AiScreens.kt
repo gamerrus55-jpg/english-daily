@@ -362,13 +362,10 @@ private fun ChatView(topic: ChatTopic, store: ProgressStore, speaker: Speaker, o
         }
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
+            ClearableField(
                 value = input,
-                onValueChange = { input = it },
-                placeholder = { Text("Ответь по-английски…") },
-                shape = RoundedCornerShape(26.dp),
-                maxLines = 3,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                onValue = { input = it },
+                placeholder = "Ответь по-английски…",
                 modifier = Modifier.weight(1f)
             )
             Spacer(Modifier.width(8.dp))
@@ -443,16 +440,18 @@ fun DiaryScreen(store: ProgressStore, speaker: Speaker, onSettings: () -> Unit, 
             }
         }
         Spacer(Modifier.height(10.dp))
-        OutlinedTextField(
+        ClearableField(
             value = text,
-            onValueChange = { text = it },
-            placeholder = { Text("Today I got up at seven…") },
-            shape = RoundedCornerShape(20.dp),
+            onValue = { text = it },
+            placeholder = "Today I got up at seven…",
             minLines = 4,
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-            textStyle = MaterialTheme.typography.titleMedium,
+            maxLines = 10,
             modifier = Modifier.fillMaxWidth()
         )
+        if (text.isNotBlank()) {
+            Spacer(Modifier.height(6.dp))
+            Pill("⌫ Убрать последнюю фразу", { text = dropLastSentence(text) })
+        }
         Spacer(Modifier.height(10.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             SmallMic(recognizer, speaker, grad, onText = { heard ->
