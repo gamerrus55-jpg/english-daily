@@ -46,6 +46,8 @@ sealed interface Screen {
     data class GameView(val game: Game, val deck: Deck) : Screen
     data object WhatsNewList : Screen
     data object Rating : Screen
+    data object SongList : Screen
+    data class SongView(val id: String) : Screen
 }
 
 /** Хранилище прогресса — доступно любому экрану. */
@@ -284,6 +286,17 @@ fun App(speaker: Speaker, store: ProgressStore, askWho: Boolean = false) {
                         val back = { screen = Screen.SoundList }
                         BackHandler(onBack = back)
                         SoundTopicScreen(s.topic, speaker, store, onExit = back)
+                    }
+
+                    Screen.SongList -> {
+                        BackHandler(onBack = goHome)
+                        SongListScreen(onOpen = { screen = Screen.SongView(it) }, onExit = goHome)
+                    }
+
+                    is Screen.SongView -> {
+                        val back = { screen = Screen.SongList }
+                        BackHandler(onBack = back)
+                        SongScreen(s.id, store, speaker, onExit = back)
                     }
 
                     Screen.Rating -> {

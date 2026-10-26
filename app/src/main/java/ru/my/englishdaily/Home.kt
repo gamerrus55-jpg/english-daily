@@ -298,6 +298,14 @@ fun HomeScreen(
             grad = Grads.Recall,
             onClick = { onOpen(Screen.StoryList) }
         )
+        WideTile(
+            emoji = "🎵",
+            title = "Мои песни",
+            hint = "Вставь текст любимой песни — ИИ переведёт строки и объяснит сленг",
+            grad = Grads.Speak,
+            isNew = WhatsNew.isNew(store, "songs"),
+            onClick = { WhatsNew.markSeen(store, "songs"); onOpen(Screen.SongList) }
+        )
 
         SectionTitle("Этап 5 · Свободная речь", "Говори своими словами")
         WideTile(
