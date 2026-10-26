@@ -129,7 +129,7 @@ fun GrammarLessonScreen(lesson: GrammarLesson, speaker: Speaker, store: Progress
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text(e.en, style = MaterialTheme.typography.titleMedium)
+                        TapText(e.en)
                         PronLine(e.en)
                         Hint(e.ru)
                     }

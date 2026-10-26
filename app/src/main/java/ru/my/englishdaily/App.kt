@@ -100,6 +100,7 @@ fun App(speaker: Speaker, store: ProgressStore, askWho: Boolean = false) {
             LaunchedEffect(Unit) { latestBuild = Updater.latestBuild() }
 
             val goHome = { screen = Screen.Home }
+            LaunchedEffect(screen) { WordTap.close() }
 
             Box(
                 Modifier
@@ -327,6 +328,8 @@ fun App(speaker: Speaker, store: ProgressStore, askWho: Boolean = false) {
                         BackHandler(onBack = goHome)
                         ProgressScreen(store, onExit = goHome)
                     }
+                // Карточка нажатого слова — поверх любого экрана
+                WordSheet(speaker, store)
                 }
             }
         }

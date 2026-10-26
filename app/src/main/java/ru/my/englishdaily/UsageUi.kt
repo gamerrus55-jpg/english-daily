@@ -83,7 +83,7 @@ fun UsageBlock(item: Item, speaker: Speaker, store: ProgressStore, modifier: Mod
             ) {
                 Text(us.tag, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(us.en, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    TapText(us.en, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                     Text("🔊")
                 }
                 Hint(us.ru)

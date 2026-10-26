@@ -115,11 +115,15 @@ fun HomeScreen(
         }
 
         val pathDue = remember { store.stats(PathStore.allVocab()).due }
+        val mineDue = remember(MyWords.version) { store.stats(MyWords.items).due + MyWords.items.count { store.isNew(it.id) } }
         TodayCard(
             store = store,
-            dueCount = pathDue,
+            dueCount = pathDue + mineDue,
             onOpen = { WhatsNew.markSeen(store, "path"); onOpen(Screen.UnitView(it.n)) },
-            onReview = { onDeck(Deck.PATH); onStart(Mode.RECALL) }
+            onReview = {
+                onDeck(if (mineDue > pathDue) Deck.MINE else Deck.PATH)
+                onStart(Mode.RECALL)
+            }
         )
         WideTile(
             emoji = "🗺",

@@ -81,7 +81,7 @@ object Dictionary {
     )
 
     private val common: Map<String, String> by lazy {
-        Content.words.associate { it.en.lowercase() to it.ru } + basic
+        (Vocab.b2 + Vocab.b1 + Content.words + Usages.multiDeck).associate { it.en.lowercase() to it.ru.substringBefore(";").trim() } + basic
     }
 
     fun clean(word: String): String =

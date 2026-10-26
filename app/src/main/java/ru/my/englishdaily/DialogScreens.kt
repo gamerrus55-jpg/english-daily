@@ -208,11 +208,15 @@ fun DialogScreen(d: Dialogue, speaker: Speaker, store: ProgressStore, onRoleplay
                         fontWeight = FontWeight.Bold,
                         color = if (active) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.primary
                     )
-                    Text(
-                        if (showEn) line.en else "🔊 " + "•".repeat(line.en.split(" ").size.coerceAtMost(12)),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = textColor
-                    )
+                    if (showEn) {
+                        TapText(line.en, color = textColor)
+                    } else {
+                        Text(
+                            "🔊 " + "•".repeat(line.en.split(" ").size.coerceAtMost(12)),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = textColor
+                        )
+                    }
                     if (showRu) {
                         Text(
                             line.ru,
@@ -315,7 +319,7 @@ fun RoleplayScreen(d: Dialogue, speaker: Speaker, store: ProgressStore, onExit: 
                     )
                     when {
                         !mine -> {
-                            Text(line.en, style = MaterialTheme.typography.titleMedium, color = if (onActive) Color.White else MaterialTheme.colorScheme.onSurface)
+                            TapText(line.en, color = if (onActive) Color.White else MaterialTheme.colorScheme.onSurface)
                             Text(
                                 line.ru,
                                 style = MaterialTheme.typography.bodySmall,

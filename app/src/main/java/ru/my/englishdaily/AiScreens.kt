@@ -409,7 +409,7 @@ private fun ChatView(topic: ChatTopic, store: ProgressStore, speaker: Speaker, o
                             .clickable { speaker.say(line.en) }
                             .padding(14.dp)
                     ) {
-                        Text(line.en, style = MaterialTheme.typography.titleMedium)
+                        TapText(line.en)
                         if (!line.mine && showRu && line.ru.isNotBlank()) Hint(line.ru)
                         if (line.mine && line.fix.isNotBlank()) {
                             Spacer(Modifier.height(6.dp))
