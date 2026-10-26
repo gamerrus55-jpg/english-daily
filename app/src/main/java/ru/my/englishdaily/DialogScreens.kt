@@ -27,40 +27,72 @@ import kotlinx.coroutines.launch
 @Composable
 fun DialogListScreen(store: ProgressStore, roleplay: Boolean, onOpen: (Dialogue) -> Unit, onExit: () -> Unit) {
     val grad = if (roleplay) Grads.Roleplay else Grads.Dialogs
+    var band by remember { mutableIntStateOf(DialogLevels.forUser(store.level ?: Level.BEGINNER)) }
+    val list = Dialogues.everything.filter { band == 0 || it.level == band }
     Column(Modifier.fillMaxSize()) {
         TopBar(if (roleplay) "🎭 Ролевая игра" else "🎬 Диалоги", onExit)
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Pill("Все", { band = 0 }, selected = band == 0, grad = grad)
+            DialogLevels.short.forEach { (lvl, name) ->
+                val count = Dialogues.everything.count { it.level == lvl }
+                Pill("$name · $count", { band = lvl }, selected = band == lvl, grad = grad)
+            }
+        }
+        Spacer(Modifier.height(10.dp))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
                 SoftCard(Modifier.fillMaxWidth()) {
-                    Text("Как заниматься", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        if (band == 0) "Как заниматься" else DialogLevels.names[band] ?: "",
+                        style = MaterialTheme.typography.titleMedium
+                    )
                     Spacer(Modifier.height(4.dp))
                     Hint(
-                        if (roleplay)
-                            "Выбери диалог и свою роль. Приложение говорит за собеседника, " +
+                        when {
+                            band == 4 -> "Живая речь, как в жизни: перебивания, «you know», «I mean», идиомы и юмор. " +
+                                "Сначала слушай на обычной скорости без текста, потом — на быстрой."
+                            roleplay -> "Выбери диалог и свою роль. Приложение говорит за собеседника, " +
                                 "а ты отвечаешь в микрофон. Сначала прослушай диалог в «Диалогах»."
-                        else
-                            "1) Послушай 2 раза без текста — угадай, о чём речь.\n" +
+                            else -> "1) Послушай 2 раза без текста — угадай, о чём речь.\n" +
                                 "2) Включи текст и послушай ещё раз.\n" +
                                 "3) Включи «Пауза для повтора» и повторяй вслух.\n" +
                                 "4) Через пару дней — быстрая скорость без текста."
+                        }
                     )
                 }
             }
-            items(Dialogues.everything, key = { it.id }) { d ->
-                val times = store.listened(d.id)
-                SoftCard(Modifier.fillMaxWidth(), onClick = { onOpen(d) }) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconTile(d.emoji, grad, 52.dp)
-                        Spacer(Modifier.width(14.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(d.title, style = MaterialTheme.typography.titleMedium)
-                            Hint((if (d.level >= 3) "🌳 продвинутый · " else "") + "${d.lines.size} реплик · " + if (times == 0) "ещё не слушал" else "прослушан: $times")
-                        }
+            var lastLevel = -1
+            list.forEach { d ->
+                if (band == 0 && d.level != lastLevel) {
+                    lastLevel = d.level
+                    item(key = "h${d.level}") {
                         Text(
-                            if (times >= 3) "✅" else "›",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            DialogLevels.names[d.level] ?: "",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 6.dp)
                         )
+                    }
+                }
+                item(key = d.id) {
+                    val times = store.listened(d.id)
+                    SoftCard(Modifier.fillMaxWidth(), onClick = { onOpen(d) }) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconTile(d.emoji, grad, 52.dp)
+                            Spacer(Modifier.width(14.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(d.title, style = MaterialTheme.typography.titleMedium)
+                                Hint(
+                                    "${DialogLevels.short[d.level]} · ${d.lines.size} реплик · " +
+                                        if (times == 0) "ещё не слушал" else "прослушан: $times"
+                                )
+                            }
+                            Text(
+                                if (times >= 3) "✅" else "›",
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }

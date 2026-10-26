@@ -110,6 +110,24 @@ class ProgressStore(context: Context) {
         bump("stories", xp = 30)
     }
 
+    // ---------- Что нового ----------
+
+    /** Сборка, с которой человек начал пользоваться приложением (новинки показываем только новее неё). */
+    val firstBuild: Int get() = prefs.getInt("_first_build", 0)
+
+    fun initFirstBuild(current: Int) {
+        if (prefs.contains("_first_build")) return
+        // Уже пользовался раньше — покажем новинки последних обновлений
+        val legacy = prefs.contains("_level") || prefs.getInt("_xp", 0) > 0
+        prefs.edit().putInt("_first_build", if (legacy) 7 else current).apply()
+    }
+
+    fun isSeen(key: String): Boolean = prefs.getBoolean("_seen_$key", false)
+
+    fun markSeen(key: String) {
+        prefs.edit().putBoolean("_seen_$key", true).apply()
+    }
+
     /** Рекорды в играх. */
     fun best(name: String): Int = prefs.getInt("_best_$name", 0)
 

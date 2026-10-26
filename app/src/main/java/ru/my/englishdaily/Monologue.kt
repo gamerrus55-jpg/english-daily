@@ -19,7 +19,7 @@ They spoke for about a minute on a topic; you get the speech-recognition transcr
 Answer in EXACTLY this format:
 SCORE: <a number from 1 to 10 for fluency and accuracy>
 LEVEL: <estimated CEFR level, e.g. B1>
-BETTER: <a corrected and more natural version of what they said, same length or shorter>
+BETTER: <a corrected and more natural version of what they said, same length or shorter, using everyday spoken English (not bookish words)>
 NOTES: <3–5 short tips in Russian, each on its own line starting with "• ": main grammar mistakes, better words or phrasal verbs for their level, and one thing they did well>
 """.trimIndent()
 

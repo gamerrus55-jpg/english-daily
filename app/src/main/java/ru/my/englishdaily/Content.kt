@@ -10,7 +10,7 @@ enum class Deck(val title: String, val singleWords: Boolean = false) {
     DIALOGS("Из диалогов"),
     COMPLEX("Сложные предложения"),
     B1_WORDS("Слова B1", singleWords = true),
-    B2_WORDS("Слова B2–C1", singleWords = true),
+    B2_WORDS("Слова B2: жизнь", singleWords = true),
     ADV_PHRASES("Фразы B2+"),
     PHRASAL("Фразовые глаголы"),
     IDIOMS("Идиомы"),
@@ -52,7 +52,7 @@ enum class Deck(val title: String, val singleWords: Boolean = false) {
             DIALOGS -> "Реплики из всех диалогов"
             COMPLEX -> "Длинные предложения с разными временами: Past Perfect, Future Perfect, условия, I wish, should have…"
             B1_WORDS -> "Слова среднего уровня: achieve, afford, reliable, eventually…"
-            B2_WORDS -> "Продвинутая лексика: acknowledge, resilience, meticulous, arguably…"
+            B2_WORDS -> "Живые слова на каждый день: leftovers, refund, commute, flat tyre, fed up, show off…"
             ADV_PHRASES -> "Фразы для спора, мнения и вежливой беседы"
             PHRASAL -> "Фразовые глаголы в живых предложениях"
             IDIOMS -> "Идиомы и устойчивые выражения"

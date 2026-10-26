@@ -153,10 +153,16 @@ object Dialogues {
     )
 
     /** Базовые и сложные диалоги вместе. */
-    val everything: List<Dialogue> get() = all + AdvancedDialogues.all
+    val everything: List<Dialogue> by lazy { (all + AdvancedDialogues.all + LiveDialogues.all).sortedBy { it.level } }
 
     /** Все реплики как карточки — для тренировок «на слух», «диктант» и т. д. */
-    val items: List<Item> get() = basicItems + AdvancedDialogues.items
+    val items: List<Item> get() = basicItems + AdvancedDialogues.items + liveItems
+
+    private val liveItems: List<Item> by lazy {
+        LiveDialogues.all.flatMap { d ->
+            d.lines.mapIndexed { i, l -> Item("d:${d.id}:$i", l.en, l.ru, "${d.emoji} ${d.title}") }
+        }
+    }
 
     private val basicItems: List<Item> = all.flatMap { d ->
         d.lines.mapIndexed { i, l -> Item("d:${d.id}:$i", l.en, l.ru, "${d.emoji} ${d.title}") }

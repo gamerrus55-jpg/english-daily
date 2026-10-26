@@ -71,9 +71,26 @@ fun HomeScreen(
                 Text("$greeting 👋", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("English Daily", style = MaterialTheme.typography.headlineLarge)
             }
+            BellButton(WhatsNew.unseen(store).size) { onOpen(Screen.WhatsNewList) }
+            Spacer(Modifier.width(8.dp))
             CircleButton("🏆") { onOpen(Screen.Progress) }
             Spacer(Modifier.width(8.dp))
             CircleButton("⚙️") { onOpen(Screen.Settings) }
+        }
+
+        val freshCount = WhatsNew.unseen(store).size
+        if (freshCount > 0) {
+            SoftCard(Modifier.fillMaxWidth(), onClick = { onOpen(Screen.WhatsNewList) }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconTile("🎁", Grads.Speak, 44.dp)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Приложение обновилось!", style = MaterialTheme.typography.titleMedium)
+                        Hint("Новинок: $freshCount · нажми, чтобы посмотреть")
+                    }
+                    NewBadge()
+                }
+            }
         }
 
         HeroCard(today = today, streak = streak, stats = stats, level = level.first, levelProgress = level.second.toFloat() / level.third, onClick = { onOpen(Screen.Progress) })
@@ -142,7 +159,8 @@ fun HomeScreen(
             title = "Грамматика шаг за шагом",
             hint = "${Grammar.all.size} уроков: правило, таблица, трансформации, перевод голосом",
             grad = Grads.Build,
-            onClick = { onOpen(Screen.GrammarList) }
+            isNew = WhatsNew.isNew(store, "tenses"),
+            onClick = { WhatsNew.markSeen(store, "tenses"); onOpen(Screen.GrammarList) }
         )
         WideTile(
             emoji = "👂",
@@ -158,7 +176,22 @@ fun HomeScreen(
             Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Deck.forLevel(store.level ?: Level.BEGINNER).forEach { d -> Pill(d.title, { onDeck(d) }, selected = d == deck) }
+            Deck.forLevel(store.level ?: Level.BEGINNER).forEach { d ->
+                val key = when (d) {
+                    Deck.COMPLEX -> "complex"
+                    Deck.B2_WORDS -> "b2_life"
+                    else -> null
+                }
+                Pill(
+                    d.title,
+                    {
+                        if (key != null) WhatsNew.markSeen(store, key)
+                        onDeck(d)
+                    },
+                    selected = d == deck,
+                    dot = key != null && WhatsNew.isNew(store, key)
+                )
+            }
         }
         // Карточка выбранной колоды: видно, что выбрано, и можно сразу начать
         SoftCard(Modifier.fillMaxWidth()) {
@@ -189,7 +222,8 @@ fun HomeScreen(
                 title = game.title,
                 hint = game.hint + " · колода «${deck.title}»",
                 grad = game.grad,
-                onClick = { onOpen(Screen.GameView(game, deck)) }
+                isNew = WhatsNew.isNew(store, "games"),
+                onClick = { WhatsNew.markSeen(store, "games"); onOpen(Screen.GameView(game, deck)) }
             )
         }
 
@@ -202,7 +236,8 @@ fun HomeScreen(
             title = "Диалоги",
             hint = "${Dialogues.everything.size} сценок: кафе, такси, врач, работа… Два голоса, три скорости",
             grad = Grads.Dialogs,
-            onClick = { onDialogs(false) }
+            isNew = WhatsNew.isNew(store, "dialog_levels") || WhatsNew.isNew(store, "live_dialogs"),
+            onClick = { WhatsNew.markSeen(store, "dialog_levels", "live_dialogs"); onDialogs(false) }
         )
         ModeGrid(listOf(Mode.LISTEN, Mode.DICTATION), deck, onStart)
 
@@ -212,7 +247,8 @@ fun HomeScreen(
             title = "Ролевая игра",
             hint = "Ты — один из героев диалога, приложение — второй",
             grad = Grads.Roleplay,
-            onClick = { onDialogs(true) }
+            isNew = WhatsNew.isNew(store, "roleplay_levels"),
+            onClick = { WhatsNew.markSeen(store, "roleplay_levels"); onDialogs(true) }
         )
         ModeGrid(listOf(Mode.REPEAT), deck, onStart)
 
@@ -410,13 +446,19 @@ private fun ModeGrid(modes: List<Mode>, deck: Deck, onStart: (Mode) -> Unit) {
 }
 
 @Composable
-private fun WideTile(emoji: String, title: String, hint: String, grad: Grad, onClick: () -> Unit) {
+private fun WideTile(emoji: String, title: String, hint: String, grad: Grad, isNew: Boolean = false, onClick: () -> Unit) {
     SoftCard(Modifier.fillMaxWidth(), onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconTile(emoji, grad, 52.dp)
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f, fill = false))
+                    if (isNew) {
+                        Spacer(Modifier.width(6.dp))
+                        NewBadge()
+                    }
+                }
                 Hint(hint)
             }
             Text("›", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

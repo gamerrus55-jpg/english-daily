@@ -39,6 +39,7 @@ sealed interface Screen {
     data object Monologue : Screen
     data object LevelPick : Screen
     data class GameView(val game: Game, val deck: Deck) : Screen
+    data object WhatsNewList : Screen
 }
 
 @Composable
@@ -215,6 +216,11 @@ fun App(speaker: Speaker, store: ProgressStore) {
                         val back = { screen = Screen.SoundList }
                         BackHandler(onBack = back)
                         SoundTopicScreen(s.topic, speaker, store, onExit = back)
+                    }
+
+                    Screen.WhatsNewList -> {
+                        BackHandler(onBack = goHome)
+                        WhatsNewScreen(store, onOpen = { screen = it }, onExit = goHome)
                     }
 
                     is Screen.GameView -> {

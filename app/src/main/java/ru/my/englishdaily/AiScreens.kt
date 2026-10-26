@@ -197,7 +197,7 @@ private data class ChatLine(val mine: Boolean, val en: String, val ru: String = 
 private fun levelStyle(level: Level): String = when (level) {
     Level.BEGINNER -> "The learner is a beginner (A1–A2). Use very simple, everyday spoken English, short sentences, no difficult words. Reply with 1–3 short sentences, then ask ONE simple question."
     Level.INTERMEDIATE -> "The learner is intermediate (B1). Use natural everyday English with common phrasal verbs, but avoid rare words. Reply with 2–4 sentences, then ask a question."
-    Level.ADVANCED -> "The learner is advanced (B2+) but lacks speaking practice. Talk like a native speaker: natural speed, idioms, phrasal verbs, humour, follow-up questions that make them explain and argue. Reply with 2–5 sentences."
+    Level.ADVANCED -> "The learner is advanced (B2+) but lacks speaking practice. Talk like a native speaker in everyday life: natural spoken English, phrasal verbs, common idioms, humour, follow-up questions that make them explain and argue. Use words people actually say in daily life — avoid bookish, literary or academic vocabulary. Reply with 2–5 sentences."
 }
 
 private fun chatSystem(topic: ChatTopic, level: Level) = """

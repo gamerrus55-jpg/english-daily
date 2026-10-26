@@ -17,6 +17,7 @@ class MainActivity : ComponentActivity() {
         Ai.init(this)
         speaker = Speaker(this)
         store = ProgressStore(this)
+        store.initFirstBuild(BuildConfig.VERSION_CODE)
         setContent { App(speaker, store) }
     }
 

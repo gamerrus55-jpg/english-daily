@@ -201,7 +201,7 @@ fun SoftButton(
 
 /** Маленькая кнопка-пилюля (озвучка и т. п.). */
 @Composable
-fun Pill(text: String, onClick: () -> Unit, selected: Boolean = false, grad: Grad = Grads.Hero) {
+fun Pill(text: String, onClick: () -> Unit, selected: Boolean = false, grad: Grad = Grads.Hero, dot: Boolean = false) {
     val shape = RoundedCornerShape(50)
     val mod = Modifier
         .clip(shape)
@@ -213,12 +213,16 @@ fun Pill(text: String, onClick: () -> Unit, selected: Boolean = false, grad: Gra
         )
         .clickable(onClick = onClick)
         .padding(horizontal = 16.dp, vertical = 10.dp)
-    Box(mod) {
+    Row(mod, verticalAlignment = Alignment.CenterVertically) {
         Text(
             text,
             style = MaterialTheme.typography.labelLarge,
             color = if (selected) Color.White else MaterialTheme.colorScheme.onSurface
         )
+        if (dot) {
+            Spacer(Modifier.width(6.dp))
+            Box(Modifier.size(8.dp).clip(CircleShape).background(Bad))
+        }
     }
 }
 
