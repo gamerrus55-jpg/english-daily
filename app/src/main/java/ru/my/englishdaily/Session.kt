@@ -199,6 +199,7 @@ private fun RecallCard(item: Item, speaker: Speaker, grad: Grad, onDone: (Boolea
                     .verticalScroll(rememberScrollState())
             ) {
                 BigText(item.en, color = grad.a)
+                PronLine(item.en, center = true)
                 Spacer(Modifier.height(14.dp))
                 Box(Modifier.align(Alignment.CenterHorizontally)) { SpeakRow(item.en, speaker) }
                 Spacer(Modifier.height(14.dp))
@@ -338,6 +339,7 @@ private fun ListenCard(
             if (picked != null) {
                 Spacer(Modifier.height(14.dp))
                 BigText(item.en, color = grad.a, style = MaterialTheme.typography.headlineSmall)
+                PronLine(item.en, center = true)
             }
         }
         Spacer(Modifier.height(16.dp))
@@ -456,6 +458,7 @@ private fun DictationCard(item: Item, speaker: Speaker, grad: Grad, onAnswer: (B
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(item.en, style = MaterialTheme.typography.titleLarge)
+                PronLine(item.en)
                 Hint(item.ru)
             }
             Spacer(Modifier.height(16.dp))
@@ -510,6 +513,7 @@ private fun SpeakCard(
                 Hint("Послушай и повтори так же", center = true)
                 Spacer(Modifier.height(10.dp))
                 BigText(item.en)
+                PronLine(item.en, center = true)
                 Spacer(Modifier.height(6.dp))
                 Hint(item.ru, center = true)
                 Spacer(Modifier.height(12.dp))
@@ -534,6 +538,7 @@ private fun SpeakCard(
             Spacer(Modifier.height(4.dp))
         } else if (!repeat && revealed) {
             BigText(item.en, color = grad.a)
+            PronLine(item.en, center = true)
         }
 
         MicButton(recognizer, speaker, grad) { heard ->

@@ -44,6 +44,14 @@ jobs:
             https://gu-st.ru/content/Other/doc/russian_trusted_sub_ca.cer
           ls -la app/src/main/assets
 
+      # Словарь произношений CMU — для транскрипции слов
+      - name: Download CMU pronouncing dictionary
+        run: |
+          mkdir -p app/src/main/assets
+          curl -fsSL --retry 3 --max-time 60 -o app/src/main/assets/cmudict.dict \
+            https://raw.githubusercontent.com/cmusphinx/cmudict/master/cmudict.dict
+          wc -l app/src/main/assets/cmudict.dict
+
       - name: Build
         env:
           STATS_TOKEN: ${{ secrets.STATS_TOKEN }}

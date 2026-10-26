@@ -16,6 +16,7 @@ class MainActivity : ComponentActivity() {
         MyWords.init(this)
         Ai.init(this)
         PathStore.init(this)
+        Pron.load(this)
         speaker = Speaker(this)
         store = ProgressStore(this)
         store.initFirstBuild(BuildConfig.VERSION_CODE)

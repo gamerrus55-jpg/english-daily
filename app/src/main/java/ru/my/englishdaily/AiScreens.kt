@@ -122,6 +122,18 @@ fun SettingsScreen(store: ProgressStore, onLevel: () -> Unit, onExit: () -> Unit
         nameError?.let { Text(it, color = Bad, style = MaterialTheme.typography.bodyMedium) }
         Spacer(Modifier.height(18.dp))
 
+        // Транскрипция
+        var ipaOn by remember { mutableStateOf(store.showIpa) }
+        var ruOn by remember { mutableStateOf(store.showRuPron) }
+        Text("Транскрипция", style = MaterialTheme.typography.titleLarge)
+        Hint("Под английскими словами и фразами: международная [ʃiːp] и русскими буквами «шип». θ и ð — межзубные звуки (th).")
+        Spacer(Modifier.height(6.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Pill("[IPA]", { ipaOn = !ipaOn; store.showIpa = ipaOn }, selected = ipaOn)
+            Pill("Русскими буквами", { ruOn = !ruOn; store.showRuPron = ruOn }, selected = ruOn)
+        }
+        Spacer(Modifier.height(18.dp))
+
         // Пользователи на этом устройстве
         val activity = LocalContext.current as android.app.Activity
         val profiles = remember { Profiles.all(activity) }

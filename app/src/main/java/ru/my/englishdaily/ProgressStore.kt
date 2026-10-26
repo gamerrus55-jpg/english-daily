@@ -171,6 +171,16 @@ class ProgressStore(context: Context) {
         bump("sounds", xp = 15)
     }
 
+    // ---------- Транскрипция ----------
+
+    var showIpa: Boolean
+        get() = prefs.getBoolean("_show_ipa", true)
+        set(value) = prefs.edit().putBoolean("_show_ipa", value).apply()
+
+    var showRuPron: Boolean
+        get() = prefs.getBoolean("_show_ru_pron", true)
+        set(value) = prefs.edit().putBoolean("_show_ru_pron", value).apply()
+
     // ---------- Выбранная колода ----------
 
     var deck: Deck?

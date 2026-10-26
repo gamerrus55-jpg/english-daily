@@ -605,6 +605,7 @@ fun BrowseScreen(deck: Deck, store: ProgressStore, speaker: Speaker, onExit: () 
                 ) {
                     Column(Modifier.weight(1f)) {
                         Text(item.en, style = MaterialTheme.typography.titleMedium)
+                        PronLine(item.en)
                         Hint(item.ru)
                     }
                     Text(

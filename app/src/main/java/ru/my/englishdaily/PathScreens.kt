@@ -231,6 +231,7 @@ fun PathUnitScreen(
                     ) {
                         Column(Modifier.weight(1f)) {
                             Text(item.en, style = MaterialTheme.typography.titleMedium)
+                            PronLine(item.en)
                             Hint(item.ru)
                         }
                         Text(if (store.box(item.id) >= 1) "✅" else "🔊")

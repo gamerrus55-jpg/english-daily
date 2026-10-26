@@ -130,6 +130,7 @@ fun GrammarLessonScreen(lesson: GrammarLesson, speaker: Speaker, store: Progress
                 ) {
                     Column(Modifier.weight(1f)) {
                         Text(e.en, style = MaterialTheme.typography.titleMedium)
+                        PronLine(e.en)
                         Hint(e.ru)
                     }
                     Text("🔊")
@@ -479,6 +480,7 @@ fun SoundTopicScreen(topic: SoundTopic, speaker: Speaker, store: ProgressStore, 
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text("🔊 ${w.en}", style = MaterialTheme.typography.titleMedium)
+                            PronLine(w.en)
                             Hint(w.ru)
                         }
                     }

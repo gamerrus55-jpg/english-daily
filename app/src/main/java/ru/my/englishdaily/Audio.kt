@@ -117,6 +117,7 @@ fun AudioLessonScreen(items: List<Item>, speaker: Speaker, onExit: () -> Unit) {
                 Spacer(Modifier.height(14.dp))
                 val showEn = phase == Phase.ANSWER || phase == Phase.REPEAT || !playing
                 BigText(if (showEn) item.en else "· · ·", color = grad.a)
+                if (phase == Phase.ANSWER || phase == Phase.REPEAT || !playing) PronLine(item.en, center = true)
                 Spacer(Modifier.height(14.dp))
                 Row(Modifier.align(Alignment.CenterHorizontally), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Pill("🔊 Ещё раз", { replay(true) })

@@ -171,6 +171,7 @@ fun BlitzGame(deck: Deck, speaker: Speaker, store: ProgressStore, onExit: () -> 
                         verticalArrangement = Arrangement.Center
                     ) {
                         BigText(c.item.en, color = grad.b)
+                        PronLine(c.item.en, center = true)
                         Spacer(Modifier.height(18.dp))
                         Text("=", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(18.dp))

@@ -195,6 +195,7 @@ private fun ColumnScope.StoryReader(story: Story, speaker: Speaker, onQuestions:
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(clean, style = MaterialTheme.typography.headlineSmall, color = StoryGrad.b)
+                    PronLine(clean)
                     Text(ru ?: "нет в словаре — посмотри перевод фразы", style = MaterialTheme.typography.bodyLarge)
                 }
                 CircleButton("✕", { word = null })
