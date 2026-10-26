@@ -181,6 +181,7 @@ private fun RecallCard(item: Item, speaker: Speaker, grad: Grad, onDone: (Boolea
     }
 
     Column(Modifier.fillMaxSize()) {
+        PictureCard(item, LocalStore.current, showMnemonic = false)
         PromptCard("Как сказать по-английски?", item.ru)
         Spacer(Modifier.height(20.dp))
 
@@ -203,6 +204,8 @@ private fun RecallCard(item: Item, speaker: Speaker, grad: Grad, onDone: (Boolea
                 Spacer(Modifier.height(14.dp))
                 Box(Modifier.align(Alignment.CenterHorizontally)) { SpeakRow(item.en, speaker) }
                 Spacer(Modifier.height(14.dp))
+                PictureCard(item, LocalStore.current, showPicture = false)
+                Spacer(Modifier.height(10.dp))
                 UsageBlock(item, speaker, LocalStore.current)
             }
             Spacer(Modifier.height(10.dp))
@@ -382,6 +385,8 @@ private fun ListenCard(
 
         Spacer(Modifier.height(16.dp))
         if (picked != null) {
+            PictureCard(item, LocalStore.current)
+            Spacer(Modifier.height(10.dp))
             UsageBlock(item, speaker, LocalStore.current)
             Spacer(Modifier.height(12.dp))
             GradientButton("Дальше", onNext, Modifier.fillMaxWidth(), grad = grad)
@@ -462,6 +467,8 @@ private fun DictationCard(item: Item, speaker: Speaker, grad: Grad, onAnswer: (B
                 Hint(item.ru)
             }
             Spacer(Modifier.height(16.dp))
+            PictureCard(item, LocalStore.current)
+            Spacer(Modifier.height(10.dp))
             UsageBlock(item, speaker, LocalStore.current)
             Spacer(Modifier.height(12.dp))
             GradientButton("Дальше", onNext, Modifier.fillMaxWidth(), grad = grad)
@@ -550,6 +557,8 @@ private fun SpeakCard(
 
         Spacer(Modifier.height(12.dp))
         if (counted) {
+            PictureCard(item, LocalStore.current)
+            Spacer(Modifier.height(10.dp))
             UsageBlock(item, speaker, LocalStore.current)
             Spacer(Modifier.height(12.dp))
             GradientButton("Дальше", onNext, Modifier.fillMaxWidth(), grad = grad)

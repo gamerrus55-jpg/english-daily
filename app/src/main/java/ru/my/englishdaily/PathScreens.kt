@@ -236,7 +236,11 @@ fun PathUnitScreen(
                         }
                         Text(if (store.box(item.id) >= 1) "✅" else "🔊")
                     }
-                    if (openedWord == item.id) UsageBlock(item, speaker, store)
+                    if (openedWord == item.id) {
+                        PictureCard(item, store)
+                        Spacer(Modifier.height(6.dp))
+                        UsageBlock(item, speaker, store)
+                    }
                 }
                 Spacer(Modifier.height(10.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

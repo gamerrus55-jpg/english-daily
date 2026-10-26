@@ -647,6 +647,8 @@ fun BrowseScreen(deck: Deck, store: ProgressStore, speaker: Speaker, onExit: () 
                 }
                 if (opened == item.id) {
                     Spacer(Modifier.height(6.dp))
+                    PictureCard(item, store)
+                    Spacer(Modifier.height(6.dp))
                     UsageBlock(item, speaker, store)
                 }
             }
