@@ -47,6 +47,13 @@ object Leaderboard {
 
     val enabled: Boolean get() = token.isNotBlank()
 
+    private fun explain(code: Int, what: String): String = when (code) {
+        401 -> "$what: ключ рейтинга недействителен (401). Нужна новая сборка с новым ключом."
+        403 -> "$what: у ключа нет прав на запись (403). Проверь Contents: Read and write."
+        404 -> "$what: ключ не видит хранилище рейтинга (404). Проверь доступ к english-daily-stats."
+        else -> "$what (код $code)"
+    }
+
     private fun open(url: String, method: String = "GET"): HttpURLConnection {
         val c = URL(url).openConnection() as HttpURLConnection
         c.requestMethod = method
@@ -112,7 +119,7 @@ object Leaderboard {
                 code = r.first
                 body = r.second
             }
-            if (code !in 200..299) throw Exception("Не удалось отправить статистику ($code)")
+            if (code !in 200..299) throw Exception(explain(code, "Не удалось отправить статистику"))
             store.statsSha = JSONObject(body).optJSONObject("content")?.optString("sha").orEmpty()
             store.lastUpload = now
         }
@@ -124,7 +131,7 @@ object Leaderboard {
             if (!enabled) throw Exception("Рейтинг ещё не подключён")
             val (code, body) = read(open("https://api.github.com/repos/$repo/contents/players"))
             if (code == 404) return@runCatching emptyList()
-            if (code !in 200..299) throw Exception("Не удалось загрузить рейтинг ($code)")
+            if (code !in 200..299) throw Exception(explain(code, "Не удалось загрузить рейтинг"))
             val files = JSONArray(body)
             (0 until files.length())
                 .map { files.getJSONObject(it) }
