@@ -356,7 +356,7 @@ object Ai {
 }
 
 /** Темы для разговора с ИИ. */
-enum class ChatTopic(val emoji: String, val title: String, val prompt: String) {
+enum class ChatTopic(val emoji: String, val title: String, val prompt: String, val usa: Boolean = false) {
     FREE("💬", "Свободная тема", "a free friendly chat about anything; start by asking how the user's day is going"),
     MEET("👋", "Знакомство", "meeting a new person at a party: names, where you are from, work, hobbies"),
     CAFE("☕", "В кафе", "you are a waiter in a cafe and the user is a customer ordering food and drinks"),
@@ -370,4 +370,12 @@ enum class ChatTopic(val emoji: String, val title: String, val prompt: String) {
     MEETING("📊", "Рабочая встреча", "a work meeting: you are a colleague discussing a project, deadlines and problems"),
     SMALLTALK("🍻", "Small talk", "casual small talk with a native speaker at a party: weather, weekend plans, hobbies, jokes"),
     STORY("📖", "Расскажи историю", "the user tells you a story from their life; ask follow-up questions and react naturally"),
+    US_CONSUL("🏛", "Собеседование в посольстве", "you are a polite but brisk U.S. consular officer at an immigrant visa interview (Diversity Visa). Ask typical simple questions one at a time: name, education, job and work experience, marital status and spouse, where they plan to live, who will help them at first. Keep it realistic but friendly. Never give legal advice", usa = true),
+    US_CBP("🛬", "Паспортный контроль в США", "you are a U.S. border officer at the airport; the user is arriving as a new immigrant with his wife. Ask about the purpose, address in the U.S., luggage, food and cash", usa = true),
+    US_RENT("🏠", "Аренда квартиры", "you are a landlord in the U.S. showing an apartment; the user is a newcomer without credit history. Discuss rent, deposit, utilities, lease, move-in date", usa = true),
+    US_BANK("🏦", "Банк и SSN", "you are a bank employee in the U.S.; help the user, a new immigrant, open a checking account, explain fees, debit card and how to build credit", usa = true),
+    US_KITCHEN("🍔", "Работа в ресторане", "you are a restaurant manager in the U.S. interviewing the user for a kitchen job; he used to own a shawarma cafe. Then switch to a busy shift: give quick kitchen instructions and orders", usa = true),
+    US_SITE("🏗", "Прораб на стройке", "you are a friendly construction foreman in the U.S.; the user is a new worker on his first day. Give simple instructions about tools, safety, schedule and pay, using real job-site words", usa = true),
+    US_DELIVERY("🚚", "Клиент доставки", "you are a customer in the U.S. waiting for a food delivery; the user is the driver who can't find the entrance. Talk about gate codes, building numbers, parking, being late", usa = true),
+    US_NEIGHBOR("👋", "Соседи и small talk", "you are a friendly American neighbor meeting the user and his wife who just moved in. Small talk about the neighborhood, where they're from, stores, work, weather in Fahrenheit", usa = true),
 }

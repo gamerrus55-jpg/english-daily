@@ -17,6 +17,7 @@ enum class Deck(val title: String, val singleWords: Boolean = false) {
     PHRASAL("Фразовые глаголы"),
     IDIOMS("Идиомы"),
     MULTI("Одно слово — разные смыслы", singleWords = true),
+    USA("🇺🇸 Переезд в США"),
     MINE("⭐ Мои слова");
 
     val items: List<Item>
@@ -35,6 +36,7 @@ enum class Deck(val title: String, val singleWords: Boolean = false) {
             PHRASAL -> Vocab.phrasal
             IDIOMS -> Idioms.items
             MULTI -> Usages.multiDeck
+            USA -> Usa.items
             MINE -> MyWords.items
         }
 
@@ -44,9 +46,9 @@ enum class Deck(val title: String, val singleWords: Boolean = false) {
     companion object {
         /** Колоды под уровень: сначала подходящие, слишком простые для продвинутых скрыты. */
         fun forLevel(level: Level): List<Deck> = when (level) {
-            Level.BEGINNER -> listOf(CORE, PATH, COURSE, PHRASES, WORDS, SLANG, DIALOGS, B1_WORDS, MULTI, MINE)
-            Level.INTERMEDIATE -> listOf(PATH, B1_WORDS, MULTI, COMPLEX, PHRASAL, SLANG, DIALOGS, IDIOMS, ADV_PHRASES, COURSE, PHRASES, MINE)
-            Level.ADVANCED -> listOf(PATH, COMPLEX, B2_WORDS, MULTI, ADV_PHRASES, PHRASAL, IDIOMS, DIALOGS, SLANG, B1_WORDS, MINE)
+            Level.BEGINNER -> listOf(CORE, PATH, COURSE, PHRASES, WORDS, SLANG, DIALOGS, B1_WORDS, MULTI, USA, MINE)
+            Level.INTERMEDIATE -> listOf(PATH, B1_WORDS, MULTI, COMPLEX, PHRASAL, SLANG, DIALOGS, IDIOMS, ADV_PHRASES, COURSE, PHRASES, USA, MINE)
+            Level.ADVANCED -> listOf(PATH, COMPLEX, B2_WORDS, MULTI, ADV_PHRASES, PHRASAL, IDIOMS, DIALOGS, SLANG, B1_WORDS, USA, MINE)
         }
 
         /** Пояснение к колоде — показываем, когда её выбирают. */
@@ -65,6 +67,7 @@ enum class Deck(val title: String, val singleWords: Boolean = false) {
             PHRASAL -> "Фразовые глаголы в живых предложениях"
             IDIOMS -> "Идиомы и устойчивые выражения"
             MULTI -> "case, charge, fine, bill, claim… Одно слово в быту, на работе и в суде — с примерами"
+            USA -> "Фразы и диалоги для переезда: посольство, аэропорт, банк, жильё, права, врач, работа"
             MINE -> "Твои слова из историй, сериалов и разговорника"
         }
     }

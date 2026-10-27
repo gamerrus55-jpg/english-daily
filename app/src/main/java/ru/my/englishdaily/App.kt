@@ -21,9 +21,11 @@ enum class Mode(val emoji: String, val title: String, val hint: String, val grad
 sealed interface Screen {
     data object Home : Screen
     data class DialogList(val roleplay: Boolean) : Screen
-    data class Dialog(val dialogue: Dialogue) : Screen
-    data class Roleplay(val dialogue: Dialogue) : Screen
-    data class Browse(val deck: Deck) : Screen
+    data class Dialog(val dialogue: Dialogue, val back: Screen? = null) : Screen
+    data class Roleplay(val dialogue: Dialogue, val back: Screen? = null) : Screen
+    data class Browse(val deck: Deck, val back: Screen? = null) : Screen
+    data object UsaHub : Screen
+    data object UsaChat : Screen
     data class Session(val mode: Mode, val deck: Deck, val items: List<Item>, val back: Screen? = null) : Screen
     data class Audio(val deck: Deck, val items: List<Item>, val back: Screen? = null) : Screen
     data object PathMap : Screen
@@ -159,24 +161,47 @@ fun App(speaker: Speaker, store: ProgressStore, askWho: Boolean = false) {
                     }
 
                     is Screen.Dialog -> {
-                        val back = { screen = Screen.DialogList(false) }
+                        val back = { screen = s.back ?: Screen.DialogList(false) }
                         BackHandler(onBack = back)
                         DialogScreen(
                             s.dialogue, speaker, store,
-                            onRoleplay = { screen = Screen.Roleplay(s.dialogue) },
+                            onRoleplay = { screen = Screen.Roleplay(s.dialogue, s.back) },
                             onExit = back
                         )
                     }
 
                     is Screen.Roleplay -> {
-                        val back = { screen = Screen.DialogList(true) }
+                        val back = { screen = s.back ?: Screen.DialogList(true) }
                         BackHandler(onBack = back)
                         RoleplayScreen(s.dialogue, speaker, store, onExit = back)
                     }
 
                     is Screen.Browse -> {
+                        val back = { screen = s.back ?: Screen.Home }
+                        BackHandler(onBack = back)
+                        BrowseScreen(s.deck, store, speaker, onExit = back)
+                    }
+
+                    Screen.UsaHub -> {
                         BackHandler(onBack = goHome)
-                        BrowseScreen(s.deck, store, speaker, onExit = goHome)
+                        UsaHubScreen(
+                            store, speaker,
+                            onTrain = { mode ->
+                                screen = if (mode == Mode.AUDIO) Screen.Audio(Deck.USA, session(Deck.USA, 20), back = Screen.UsaHub)
+                                else Screen.Session(mode, Deck.USA, session(Deck.USA, if (mode == Mode.SPEAK) 10 else 15), back = Screen.UsaHub)
+                            },
+                            onDialog = { screen = Screen.Dialog(it, back = Screen.UsaHub) },
+                            onRoleplay = { screen = Screen.Roleplay(it, back = Screen.UsaHub) },
+                            onChat = { screen = Screen.UsaChat },
+                            onBrowse = { screen = Screen.Browse(Deck.USA, back = Screen.UsaHub) },
+                            onExit = goHome
+                        )
+                    }
+
+                    Screen.UsaChat -> {
+                        val back = { screen = Screen.UsaHub }
+                        BackHandler(onBack = back)
+                        AiChatScreen(store, speaker, onSettings = { screen = Screen.Settings }, onExit = back, usa = true)
                     }
 
                     is Screen.Session -> {

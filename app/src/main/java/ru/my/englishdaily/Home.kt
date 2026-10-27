@@ -121,6 +121,14 @@ fun HomeScreen(
                 onGame = { game -> onDeck(Deck.CORE); onOpen(Screen.GameView(game, Deck.CORE)) },
                 onBrowse = { onDeck(Deck.CORE); onBrowse() },
             )
+        WideTile(
+            emoji = "🇺🇸",
+            title = "Переезд в США",
+            hint = "Посольство, аэропорт, банк, жильё, права, работа · диалоги · американские мерки",
+            grad = Grads.Repeat,
+            isNew = WhatsNew.isNew(store, "usa"),
+            onClick = { WhatsNew.markSeen(store, "usa"); onOpen(Screen.UsaHub) }
+        )
         } else {
         val pathDue = remember { store.stats(PathStore.allVocab()).due }
         val mineDue = remember(MyWords.version) { store.stats(MyWords.items).due + MyWords.items.count { store.isNew(it.id) } }
@@ -201,6 +209,15 @@ fun HomeScreen(
                 }
             }
         }
+
+        WideTile(
+            emoji = "🇺🇸",
+            title = "Переезд в США",
+            hint = "Посольство, аэропорт, банк, жильё, права, работа · диалоги · американские мерки",
+            grad = Grads.Repeat,
+            isNew = WhatsNew.isNew(store, "usa"),
+            onClick = { WhatsNew.markSeen(store, "usa"); onOpen(Screen.UsaHub) }
+        )
 
         SectionTitle("Этап 0 · Фундамент", "Грамматика по методу Бонк и английские звуки")
         WideTile(

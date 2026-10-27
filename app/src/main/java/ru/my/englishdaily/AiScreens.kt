@@ -298,12 +298,12 @@ RU: <Russian translation of your reply>
 """.trimIndent()
 
 @Composable
-fun AiChatScreen(store: ProgressStore, speaker: Speaker, onSettings: () -> Unit, onExit: () -> Unit) {
+fun AiChatScreen(store: ProgressStore, speaker: Speaker, onSettings: () -> Unit, onExit: () -> Unit, usa: Boolean = false) {
     var topic by remember { mutableStateOf<ChatTopic?>(null) }
     val t = topic
     if (t == null) {
         Column(Modifier.fillMaxSize()) {
-            TopBar("🤖 Собеседник", onExit)
+            TopBar(if (usa) "🇺🇸 Репетиция переезда" else "🤖 Собеседник", onExit)
             if (!store.aiReady) {
                 SoftCard(Modifier.fillMaxWidth()) {
                     Text("Нужен API-ключ", style = MaterialTheme.typography.titleMedium)
@@ -316,7 +316,7 @@ fun AiChatScreen(store: ProgressStore, speaker: Speaker, onSettings: () -> Unit,
             Text("Выбери тему", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(8.dp))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(ChatTopic.entries) { ct ->
+                items(ChatTopic.entries.filter { if (usa) it.usa else true }) { ct ->
                     SoftCard(Modifier.fillMaxWidth(), onClick = { topic = ct }) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconTile(ct.emoji, Grads.Hero, 44.dp)
