@@ -128,7 +128,22 @@ fun App(speaker: Speaker, store: ProgressStore, askWho: Boolean = false) {
                         chooseDeck(Deck.forLevel(picked).first())
                     }
                 } else when (val s = screen) {
-                    Screen.Home -> HomeScreen(
+                    Screen.Home -> if (Lang.active == Lang.SR) SerbianHome(
+                        store = store,
+                        speaker = speaker,
+                        deck = deck,
+                        onDeck = { chooseDeck(it) },
+                        onStart = { mode ->
+                            val d = if (mode == Mode.BUILD && deck.singleWords) Deck.SR_PHRASES else deck
+                            screen = if (mode == Mode.AUDIO) {
+                                Screen.Audio(d, session(d, 20))
+                            } else {
+                                Screen.Session(mode, d, session(d, if (mode == Mode.SPEAK) 10 else 15))
+                            }
+                        },
+                        onBrowse = { screen = Screen.Browse(deck) },
+                        onOpen = { screen = it },
+                    ) else HomeScreen(
                         store = store,
                         speaker = speaker,
                         deck = deck,
@@ -138,7 +153,7 @@ fun App(speaker: Speaker, store: ProgressStore, askWho: Boolean = false) {
                         onStart = { mode ->
                             // Из отдельных слов фразу не собрать — берём фразы своего уровня
                             val d = if (mode == Mode.BUILD && deck.singleWords) {
-                                if (level == Level.BEGINNER) Deck.COURSE else Deck.ADV_PHRASES
+                                if (Lang.active == Lang.SR) Deck.SR_PHRASES else if (level == Level.BEGINNER) Deck.COURSE else Deck.ADV_PHRASES
                             } else deck
                             screen = if (mode == Mode.AUDIO) {
                                 Screen.Audio(d, session(d, 20))
@@ -365,6 +380,7 @@ fun App(speaker: Speaker, store: ProgressStore, askWho: Boolean = false) {
 
 /** Слова фразы без знаков препинания — для сравнения ответов. */
 fun wordsOf(s: String): List<String> =
+    if (Lang.active == Lang.SR) srWords(s) else
     s.lowercase()
         .replace('’', '\'')
         .replace(Regex("[^a-z0-9' ]"), " ")

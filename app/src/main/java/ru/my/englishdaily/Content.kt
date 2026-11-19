@@ -18,6 +18,9 @@ enum class Deck(val title: String, val singleWords: Boolean = false) {
     IDIOMS("Идиомы"),
     MULTI("Одно слово — разные смыслы", singleWords = true),
     USA("🇺🇸 Переезд в США"),
+    SR_COURSE("🇷🇸 Курс: фразы по порядку"),
+    SR_PHRASES("🇷🇸 Фразы на каждый день"),
+    SR_WORDS("🇷🇸 Слова", singleWords = true),
     MINE("⭐ Мои слова");
 
     val items: List<Item>
@@ -37,15 +40,18 @@ enum class Deck(val title: String, val singleWords: Boolean = false) {
             IDIOMS -> Idioms.items
             MULTI -> Usages.multiDeck
             USA -> Usa.items
+            SR_COURSE -> SrContent.course
+            SR_PHRASES -> SrContent.phrases
+            SR_WORDS -> SrContent.words
             MINE -> MyWords.items
         }
 
     /** Курс проходится строго по порядку, остальные колоды — вперемешку. */
-    val ordered: Boolean get() = this == COURSE || this == CORE
+    val ordered: Boolean get() = this == COURSE || this == CORE || this == SR_COURSE
 
     companion object {
         /** Колоды под уровень: сначала подходящие, слишком простые для продвинутых скрыты. */
-        fun forLevel(level: Level): List<Deck> = when (level) {
+        fun forLevel(level: Level): List<Deck> = if (Lang.active == Lang.SR) listOf(SR_COURSE, SR_PHRASES, SR_WORDS) else when (level) {
             Level.BEGINNER -> listOf(CORE, PATH, COURSE, PHRASES, WORDS, SLANG, DIALOGS, B1_WORDS, MULTI, USA, MINE)
             Level.INTERMEDIATE -> listOf(PATH, B1_WORDS, MULTI, COMPLEX, PHRASAL, SLANG, DIALOGS, IDIOMS, ADV_PHRASES, COURSE, PHRASES, USA, MINE)
             Level.ADVANCED -> listOf(PATH, COMPLEX, B2_WORDS, MULTI, ADV_PHRASES, PHRASAL, IDIOMS, DIALOGS, SLANG, B1_WORDS, USA, MINE)
@@ -68,6 +74,9 @@ enum class Deck(val title: String, val singleWords: Boolean = false) {
             IDIOMS -> "Идиомы и устойчивые выражения"
             MULTI -> "case, charge, fine, bill, claim… Одно слово в быту, на работе и в суде — с примерами"
             USA -> "Фразы и диалоги для переезда: посольство, аэропорт, банк, жильё, права, врач, работа"
+            SR_COURSE -> "${SrContent.patternCount} разговорных конструкций от «Želim da…» до «Hajde da…», по порядку"
+            SR_PHRASES -> "Бытовые фразы: кафе, магазин, дорога, жильё, здоровье"
+            SR_WORDS -> "Самые нужные слова: числа, дни, еда, места, глаголы"
             MINE -> "Твои слова из историй, сериалов и разговорника"
         }
     }

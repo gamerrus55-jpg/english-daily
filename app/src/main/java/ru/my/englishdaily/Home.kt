@@ -76,6 +76,8 @@ fun HomeScreen(
             CircleButton("🏆") { onOpen(Screen.Progress) }
             Spacer(Modifier.width(8.dp))
             CircleButton("⚙️") { onOpen(Screen.Settings) }
+            Spacer(Modifier.width(8.dp))
+            CircleButton("🇷🇸") { Lang.switchTo(context as android.app.Activity, Lang.SR) }
         }
 
         // Тихо отправляем свою статистику в общий рейтинг
@@ -391,7 +393,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HeroCard(
+internal fun HeroCard(
     today: Int,
     streak: Int,
     stats: ProgressStore.Stats,
@@ -492,7 +494,7 @@ private fun HeroStat(label: String, value: Int, modifier: Modifier) {
 }
 
 @Composable
-private fun ModeGrid(modes: List<Mode>, deck: Deck, onStart: (Mode) -> Unit) {
+internal fun ModeGrid(modes: List<Mode>, deck: Deck, onStart: (Mode) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         modes.chunked(2).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -523,7 +525,7 @@ private fun ModeGrid(modes: List<Mode>, deck: Deck, onStart: (Mode) -> Unit) {
 }
 
 @Composable
-private fun WideTile(emoji: String, title: String, hint: String, grad: Grad, isNew: Boolean = false, onClick: () -> Unit) {
+internal fun WideTile(emoji: String, title: String, hint: String, grad: Grad, isNew: Boolean = false, onClick: () -> Unit) {
     SoftCard(Modifier.fillMaxWidth(), onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconTile(emoji, grad, 52.dp)
@@ -544,7 +546,7 @@ private fun WideTile(emoji: String, title: String, hint: String, grad: Grad, isN
 }
 
 @Composable
-private fun TtsWarning(problem: Speaker.Problem) {
+internal fun TtsWarning(problem: Speaker.Problem) {
     val context = LocalContext.current
     SoftCard(Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -552,7 +554,7 @@ private fun TtsWarning(problem: Speaker.Problem) {
             Spacer(Modifier.width(14.dp))
             Text(
                 if (problem == Speaker.Problem.NO_ENGLISH)
-                    "Нет английского голоса — озвучки не будет. Скачай его."
+                    "Нет голоса для ${Lang.active.ruName} языка — озвучки не будет. Скачай его в настройках синтезатора речи."
                 else
                     "Не найден синтезатор речи. Установи «Синтезатор речи Google» из Play Маркета.",
                 style = MaterialTheme.typography.bodyMedium,

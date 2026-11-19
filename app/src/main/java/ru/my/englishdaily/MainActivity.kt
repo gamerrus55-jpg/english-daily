@@ -13,6 +13,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        Lang.load(this)
         MyWords.init(this)
         Ai.init(this)
         PathStore.init(this)

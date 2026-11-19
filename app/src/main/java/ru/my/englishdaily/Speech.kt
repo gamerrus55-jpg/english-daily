@@ -103,8 +103,8 @@ class Recognizer(context: Context) {
         partial = ""
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US")
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "en-US")
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Lang.active.sttTag)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, Lang.active.sttTag)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
         }
@@ -187,6 +187,7 @@ private val expansions = mapOf(
 
 /** Слова фразы в «каноническом» виде: без сокращений, числа словами. */
 fun canonWords(s: String): List<String> {
+    if (Lang.active == Lang.SR) return srWords(s)
     val prepared = s.replace(Regex("\\$(\\d+)"), "$1 dollars")
     return wordsOf(prepared).flatMap { w ->
         val n = w.toIntOrNull()

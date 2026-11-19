@@ -65,12 +65,22 @@ class Speaker(context: Context) {
     private fun bad(result: Int) =
         result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED
 
+    /** Язык изучения (английский или сербский); для сербского есть запасные близкие голоса. */
+    private fun setStudyLang(tts: TextToSpeech): Int {
+        var last = TextToSpeech.LANG_NOT_SUPPORTED
+        for (tag in Lang.active.ttsTags) {
+            last = tts.setLanguage(Locale.forLanguageTag(tag))
+            if (!bad(last)) return last
+        }
+        return last
+    }
+
     private fun onEnInit(status: Int) {
         if (status != TextToSpeech.SUCCESS) {
             problem = Problem.NO_ENGINE
             return
         }
-        if (bad(en.setLanguage(Locale.US))) {
+        if (bad(setStudyLang(en))) {
             problem = Problem.NO_ENGLISH
         } else {
             en.setPitch(1.05f)
@@ -81,7 +91,7 @@ class Speaker(context: Context) {
 
     private fun onEn2Init(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            en2.setLanguage(Locale.US)
+            setStudyLang(en2)
             en2.setPitch(0.75f)
         }
     }
