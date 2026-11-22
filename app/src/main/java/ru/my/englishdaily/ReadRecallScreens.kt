@@ -78,12 +78,12 @@ fun ReadListScreen(store: ProgressStore, onOpen: (RrPassage) -> Unit, onExit: ()
 
 // ---------- Текст с выделенными словами ----------
 
-private enum class Chip { HIGHLIGHT, BLANK, CURRENT, OK, BAD }
+private enum class RrChip { HIGHLIGHT, BLANK, CURRENT, OK, BAD }
 
 @Composable
 private fun RrText(
     p: RrPassage,
-    stateOf: (RrSeg.Target) -> Chip,
+    stateOf: (RrSeg.Target) -> RrChip,
     shown: (RrSeg.Target) -> String,
     onTap: ((RrSeg.Target) -> Unit)? = null,
 ) {
@@ -96,10 +96,10 @@ private fun RrText(
                 }
                 is RrSeg.Target -> {
                     val color = when (stateOf(seg)) {
-                        Chip.HIGHLIGHT, Chip.CURRENT -> MaterialTheme.colorScheme.primary
-                        Chip.BLANK -> MaterialTheme.colorScheme.onSurfaceVariant
-                        Chip.OK -> green
-                        Chip.BAD -> MaterialTheme.colorScheme.error
+                        RrChip.HIGHLIGHT, RrChip.CURRENT -> MaterialTheme.colorScheme.primary
+                        RrChip.BLANK -> MaterialTheme.colorScheme.onSurfaceVariant
+                        RrChip.OK -> green
+                        RrChip.BAD -> MaterialTheme.colorScheme.error
                     }
                     var mod: Modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(color.copy(alpha = 0.14f))
                     if (onTap != null) mod = mod.clickable { onTap(seg) }
@@ -129,20 +129,20 @@ private fun hintFor(word: String, level: Int): String {
 
 // ---------- Занятие ----------
 
-private enum class Phase { READ, THINK, RECALL, DONE }
+private enum class RrPhase { READ, THINK, RECALL, DONE }
 
 @Composable
 fun ReadRecallScreen(p: RrPassage, speaker: Speaker, store: ProgressStore, onExit: () -> Unit) {
     var round by remember { mutableStateOf(0) }
     key(round) {
-        var phase by remember { mutableStateOf(Phase.READ) }
+        var phase by remember { mutableStateOf(RrPhase.READ) }
         val results = remember { mutableStateListOf<Boolean?>().apply { repeat(p.targets.size) { add(null) } } }
 
         when (phase) {
-            Phase.READ -> ReadPhase(p, speaker, onExit) { phase = Phase.THINK }
-            Phase.THINK -> ThinkPhase(p, onExit) { phase = Phase.RECALL }
-            Phase.RECALL -> RecallPhase(p, speaker, store, results, onExit) { phase = Phase.DONE }
-            Phase.DONE -> DonePhase(p, results, speaker, onExit) { round++ }
+            RrPhase.READ -> ReadPhase(p, speaker, onExit) { phase = RrPhase.THINK }
+            RrPhase.THINK -> ThinkPhase(p, onExit) { phase = RrPhase.RECALL }
+            RrPhase.RECALL -> RecallPhase(p, speaker, store, results, onExit) { phase = RrPhase.DONE }
+            RrPhase.DONE -> DonePhase(p, results, speaker, onExit) { round++ }
         }
     }
 }
@@ -154,7 +154,7 @@ private fun ReadPhase(p: RrPassage, speaker: Speaker, onExit: () -> Unit, onNext
         TopBar("${p.emoji} ${p.title}", onExit, right = "1/3 читаем")
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SoftCard(Modifier.fillMaxWidth()) {
-                RrText(p, stateOf = { Chip.HIGHLIGHT }, shown = { it.word }, onTap = { selected = it; speaker.say(it.word) })
+                RrText(p, stateOf = { RrChip.HIGHLIGHT }, shown = { it.word }, onTap = { selected = it; speaker.say(it.word) })
             }
             val sel = selected
             if (sel != null) {
@@ -265,9 +265,9 @@ private fun RecallPhase(
                     p,
                     stateOf = {
                         when {
-                            it.idx < cur || (it.idx == cur && revealed) -> if (results[it.idx] == true) Chip.OK else Chip.BAD
-                            it.idx == cur -> Chip.CURRENT
-                            else -> Chip.BLANK
+                            it.idx < cur || (it.idx == cur && revealed) -> if (results[it.idx] == true) RrChip.OK else RrChip.BAD
+                            it.idx == cur -> RrChip.CURRENT
+                            else -> RrChip.BLANK
                         }
                     },
                     shown = {
