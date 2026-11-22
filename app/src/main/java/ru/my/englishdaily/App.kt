@@ -16,6 +16,7 @@ enum class Mode(val emoji: String, val title: String, val hint: String, val grad
     LISTEN("👂", "На слух", "Услышал — выбери перевод", Grads.Listen),
     DICTATION("✍️", "Диктант", "Услышал — напиши", Grads.Dictation),
     REPEAT("🦜", "Повтори", "За диктором, с оценкой произношения", Grads.Repeat),
+    MIX("🔀", "Микс", "Все типы заданий вперемешку", Grads.Hero),
 }
 
 sealed interface Screen {
@@ -35,6 +36,8 @@ sealed interface Screen {
     data class PathRoleplay(val n: Int, val dialogue: Dialogue) : Screen
     data object StoryList : Screen
     data class StoryView(val story: Story) : Screen
+    data object ReadList : Screen
+    data class ReadView(val passage: RrPassage) : Screen
     data object Diary : Screen
     data object AiChat : Screen
     data object Settings : Screen
@@ -282,6 +285,17 @@ fun App(speaker: Speaker, store: ProgressStore, askWho: Boolean = false) {
                         val back = { screen = Screen.StoryList }
                         BackHandler(onBack = back)
                         StoryScreen(s.story, speaker, store, onExit = back)
+                    }
+
+                    Screen.ReadList -> {
+                        BackHandler(onBack = goHome)
+                        ReadListScreen(store, onOpen = { screen = Screen.ReadView(it) }, onExit = goHome)
+                    }
+
+                    is Screen.ReadView -> {
+                        val back = { screen = Screen.ReadList }
+                        BackHandler(onBack = back)
+                        ReadRecallScreen(s.passage, speaker, store, onExit = back)
                     }
 
                     Screen.Diary -> {

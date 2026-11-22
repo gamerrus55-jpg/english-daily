@@ -87,6 +87,21 @@ fun SerbianHome(
         SectionTitle("Режимы", "Все берут карточки из выбранной колоды")
         ModeGrid(listOf(Mode.RECALL, Mode.AUDIO, Mode.BUILD, Mode.SPEAK), deck, onStart)
 
+        WideTile(
+            emoji = "🔀",
+            title = "Микс",
+            hint = "Все типы заданий вперемешку: вспомни, на слух, диктант, вслух, собери фразу",
+            grad = Grads.Hero,
+            onClick = { onStart(Mode.MIX) }
+        )
+        WideTile(
+            emoji = "🧠",
+            title = "Читай и вспоминай",
+            hint = "Отрывок с выделенными словами · подумай · впиши слова по памяти, без вариантов",
+            grad = Grads.Recall,
+            onClick = { onOpen(Screen.ReadList) }
+        )
+
         Spacer(Modifier.height(24.dp))
     }
 }

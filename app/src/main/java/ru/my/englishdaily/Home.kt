@@ -321,6 +321,14 @@ fun HomeScreen(
         )
         ModeGrid(listOf(Mode.REPEAT), deck, onStart)
 
+        WideTile(
+            emoji = "🔀",
+            title = "Микс",
+            hint = "Все типы заданий вперемешку: вспомни, собери, на слух, диктант, вслух · берёт карточки выбранной колоды",
+            grad = Grads.Hero,
+            onClick = { onStart(Mode.MIX) }
+        )
+
         SectionTitle("Этап 4 · Истории и чтение", "Слушай, читай с переводом слов, отвечай на вопросы")
         WideTile(
             emoji = "📚",
@@ -328,6 +336,13 @@ fun HomeScreen(
             hint = "${Stories.everything.size} историй четырёх уровней · вопросы голосом · перевод по нажатию на слово",
             grad = Grads.Recall,
             onClick = { onOpen(Screen.StoryList) }
+        )
+        WideTile(
+            emoji = "🧠",
+            title = "Читай и вспоминай",
+            hint = "Отрывок с выделенными словами · подумай · впиши слова по памяти, без вариантов",
+            grad = Grads.Recall,
+            onClick = { onOpen(Screen.ReadList) }
         )
         WideTile(
             emoji = "🎵",

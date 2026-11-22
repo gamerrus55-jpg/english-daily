@@ -36,6 +36,13 @@ fun SessionScreen(s: Screen.Session, speaker: Speaker, store: ProgressStore, onE
     var correct by remember(s) { mutableIntStateOf(0) }
     var answered by remember(s) { mutableIntStateOf(0) }
     val recognizer = rememberRecognizer()
+    val mixUsage = remember(s) { mutableMapOf<Mode, Int>() }
+    val mixAssigned = remember(s) { mutableMapOf<Int, Mode>() }
+
+    /** В режиме «Микс» тип задания выбирается для каждой карточки; в остальных режимах он один. */
+    fun taskFor(i: Int, item: Item): Mode =
+        if (s.mode != Mode.MIX) s.mode
+        else mixAssigned.getOrPut(i) { pickMixTask(item, s.deck, mixAssigned[i - 1], mixUsage) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -74,11 +81,12 @@ fun SessionScreen(s: Screen.Session, speaker: Speaker, store: ProgressStore, onE
             FinishView(s.mode, correct, answered, onExit)
         } else {
             val item = queue[index]
+            val task = taskFor(index, item)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconTile(s.mode.emoji, s.mode.grad, 34.dp)
+                IconTile(task.emoji, task.grad, 34.dp)
                 Spacer(Modifier.width(10.dp))
                 Column {
-                    Text(s.mode.title, style = MaterialTheme.typography.titleMedium)
+                    Text(task.title, style = MaterialTheme.typography.titleMedium)
                     Hint(if (item.group.isNotEmpty()) item.group else s.deck.title)
                 }
             }
@@ -86,9 +94,9 @@ fun SessionScreen(s: Screen.Session, speaker: Speaker, store: ProgressStore, onE
             key(index) {
                 val next: () -> Unit = { index++ }
                 val answer: (Boolean) -> Unit = { ok -> onResult(item, ok) }
-                when (s.mode) {
+                when (task) {
                     Mode.RECALL -> RecallCard(
-                        item, speaker, s.mode.grad,
+                        item, speaker, task.grad,
                         onDone = { ok -> answer(ok); next() },
                         onKnown = {
                             store.markKnown(item.id)
@@ -97,12 +105,13 @@ fun SessionScreen(s: Screen.Session, speaker: Speaker, store: ProgressStore, onE
                             next()
                         }
                     )
-                    Mode.BUILD -> BuildCard(item, speaker, s.mode.grad, answer, next)
-                    Mode.LISTEN -> ListenCard(item, s.deck.items, speaker, s.mode.grad, answer, next)
-                    Mode.DICTATION -> DictationCard(item, speaker, s.mode.grad, answer, next)
-                    Mode.SPEAK -> SpeakCard(item, speaker, recognizer, s.mode.grad, repeat = false, answer, next)
-                    Mode.REPEAT -> SpeakCard(item, speaker, recognizer, s.mode.grad, repeat = true, answer, next)
+                    Mode.BUILD -> BuildCard(item, speaker, task.grad, answer, next)
+                    Mode.LISTEN -> ListenCard(item, s.deck.items, speaker, task.grad, answer, next)
+                    Mode.DICTATION -> DictationCard(item, speaker, task.grad, answer, next)
+                    Mode.SPEAK -> SpeakCard(item, speaker, recognizer, task.grad, repeat = false, answer, next)
+                    Mode.REPEAT -> SpeakCard(item, speaker, recognizer, task.grad, repeat = true, answer, next)
                     Mode.AUDIO -> Text("Аудиоурок открывается отдельно")
+                    Mode.MIX -> Unit
                 }
             }
         }
@@ -590,4 +599,21 @@ private fun KnownButton(onClick: () -> Unit) {
     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Pill("✓ Уже знаю — больше не показывать", onClick)
     }
+}
+
+
+/**
+ * Для режима «Микс»: выбирает тип задания так, чтобы два одинаковых не шли подряд
+ * и все типы встречались примерно поровну.
+ */
+internal fun pickMixTask(item: Item, deck: Deck, prev: Mode?, usage: MutableMap<Mode, Int>): Mode {
+    val words = item.en.trim().split(Regex("\\s+")).size
+    val pool = mutableListOf(Mode.RECALL, Mode.LISTEN, Mode.DICTATION, Mode.SPEAK)
+    if (words >= 3 && !deck.singleWords) pool += Mode.BUILD
+    if (words >= 2 && Lang.active == Lang.EN) pool += Mode.REPEAT
+    val candidates = pool.filter { it != prev }.ifEmpty { pool }
+    val least = candidates.minOf { usage[it] ?: 0 }
+    val pick = candidates.filter { (usage[it] ?: 0) == least }.random()
+    usage[pick] = (usage[pick] ?: 0) + 1
+    return pick
 }
